@@ -1,0 +1,25 @@
+{
+  "name": "aca-v2-functions",
+  "version": "0.1.0",
+  "main": "lib/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0 <20.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "firebase emulators:start"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.1",
+    "firebase-functions": "^4.4.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.2.2",
+    "uuid": "^9.0.1"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "ACaptiveAudience.net v2",
+  "short_name": "ACA v2",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#181a1b",
+  "theme_color": "#2d8cf0",
+  "description": "Local-first writing forge with pseudonym onboarding and AI chat.",
+  "icons": []
+}
