@@ -1,0 +1,236 @@
+:root{
+  --bg: #0b0c10;
+  --fg: #e6e6e6;
+  --muted: #9aa0a6;
+  --card: rgba(255,255,255,0.06);
+  --cardBorder: rgba(255,255,255,0.10);
+  --accent: #c9a227;
+}
+
+/* Base */
+*{ box-sizing: border-box; }
+html, body{ height: 100%; }
+body{
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Top bar */
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  backdrop-filter: blur(10px);
+  background: rgba(11,12,16,0.55);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.brand{
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+.brand__mark{
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(201,162,39,0.35), transparent 55%),
+    radial-gradient(circle at 70% 70%, rgba(88,101,242,0.22), transparent 55%),
+    rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.brand__name{
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.nav{
+  display: inline-flex;
+  gap: 0.9rem;
+}
+.nav a{
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.4rem 0.6rem;
+  border-radius: 10px;
+}
+.nav a:hover{ color: var(--fg); background: rgba(255,255,255,0.06); }
+.nav a.active{ color: var(--fg); border: 1px solid rgba(255,255,255,0.12); }
+
+/* Stage with SVG background layers */
+.stage{
+  position: relative;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 3rem;
+  z-index: 1;
+}
+
+/* Layer 1: subtle repeating logo pattern */
+.stage::before{
+  content:"";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+
+  /* If your SVG filename differs, change /assets/logo.svg */
+  background-image: url("/assets/logo.svg");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  background-position: 0 0;
+
+  opacity: 0.06;
+  filter: blur(0px);
+  transform: translateZ(0);
+}
+
+/* Layer 2: oversized "ghost" logo for depth */
+.stage::after{
+  content:"";
+  position: fixed;
+  inset: -20%;
+  z-index: -2;
+
+  background-image: url("/assets/logo.svg");
+  background-repeat: no-repeat;
+  background-size: 1200px 1200px;
+  background-position: 70% 20%;
+
+  opacity: 0.08;
+  filter: blur(2px);
+  transform: rotate(-6deg);
+}
+
+/* Layer 3: vignette + glow overlay */
+body::before{
+  content:"";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(201,162,39,0.14), transparent 45%),
+    radial-gradient(circle at 70% 60%, rgba(88,101,242,0.12), transparent 50%),
+    radial-gradient(circle at center, rgba(0,0,0,0.25), rgba(0,0,0,0.92));
+}
+
+/* Hero */
+.hero{
+  padding: 1.5rem 1.5rem 1.25rem;
+  border: 1px solid var(--cardBorder);
+  background: var(--card);
+  border-radius: 18px;
+  backdrop-filter: blur(10px);
+  margin-bottom: 1.25rem;
+}
+.hero h1{
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+}
+.lede{
+  margin: 0 0 1rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Chips */
+.chips{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.chip{
+  font-size: 0.85rem;
+  color: var(--fg);
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+}
+
+/* Cards grid */
+.grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 760px){
+  .grid{ grid-template-columns: 1fr; }
+}
+
+.card{
+  border: 1px solid var(--cardBorder);
+  background: var(--card);
+  border-radius: 18px;
+  padding: 1.25rem 1.25rem 1.1rem;
+  backdrop-filter: blur(10px);
+}
+.card h2{
+  margin: 0 0 0.7rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.01em;
+}
+.card p{
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.card.wide{
+  margin-top: 0.25rem;
+}
+
+.bullets{
+  margin: 0.9rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.bullets li{ margin: 0.25rem 0; }
+.bullets strong{ color: var(--fg); }
+
+.ctaRow{
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.1rem;
+}
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 0.95rem;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #0b0c10;
+  background: var(--accent);
+  border: 1px solid rgba(0,0,0,0.2);
+  font-weight: 600;
+}
+.btn--ghost{
+  background: rgba(255,255,255,0.08);
+  color: var(--fg);
+  border: 1px solid rgba(255,255,255,0.14);
+}
+.btn:hover{ filter: brightness(1.05); }
+
+/* Footer */
+.footer{
+  margin-top: 1.5rem;
+  color: var(--muted);
+  text-align: center;
+}
+.footer .fine{
+  margin-top: 0.3rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}

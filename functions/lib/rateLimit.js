@@ -1,8 +1,11 @@
+"use strict";
 // Simple in-memory rate limiter per IP for ACA v2
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.rateLimitMiddleware = rateLimitMiddleware;
 const WINDOW_MS = 60000; // 1 minute
 const MAX_REQUESTS = 30;
 const ipMap = {};
-export function rateLimitMiddleware(req, res, next) {
+function rateLimitMiddleware(req, res, next) {
     const ip = req.ip || req.headers["x-forwarded-for"] || "unknown";
     const now = Date.now();
     let entry = ipMap[ip];
@@ -21,3 +24,4 @@ export function rateLimitMiddleware(req, res, next) {
     }
     next();
 }
+//# sourceMappingURL=rateLimit.js.map
