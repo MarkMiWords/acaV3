@@ -1,17 +1,18 @@
 "use strict";
-/**
- * Firebase Cloud Functions v2 API
- * Backend-only API endpoints for acaV3
- */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.api = void 0;
+9; /**
+ * Firebase Cloud Functions v2 API
+ * Backend-only API endpoints for acaV3
+ */
 const https_1 = require("firebase-functions/v2/https");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const guardrails_1 = require("./guardrails");
+const generative_ai_1 = require("@google/generative-ai");
 // Initialize Express app
 const app = (0, express_1.default)();
 // Middleware
@@ -63,12 +64,14 @@ app.post('/chat', async (req, res) => {
             });
             return;
         }
-        // TODO: Call Gemini API using apiKey
-        // TODO: Implement actual AI logic here
-        // const aiResponse = await callGeminiAPI(combinedText, userMessage, apiKey);
-        // Stub response for now
+        const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const prompt = `You are an expert in analyzing spreadsheet data. The user has provided the following data from a spreadsheet:\n\n${sheetText}\n\n The user has asked the following question:\n\n${userMessage}\n\n Provide a detailed answer to the user's question based on the provided data.`;
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
         res.json({
-            response: 'This is a stub response. Real AI call will be implemented here.',
+            response: text,
             metadata: {
                 sheetLength: sheetText?.length || 0,
                 messageLength: userMessage.length,
@@ -89,6 +92,7 @@ app.post('/chat', async (req, res) => {
  * Region can be configured via firebase.json or deployment flags
  */
 exports.api = (0, https_1.onRequest)({
+    region: 'asia-southeast1',
     // Region: us-central1 is default, can be changed if needed
     // Secrets will be automatically injected by Firebase when configured
     secrets: ['GEMINI_API_KEY'],

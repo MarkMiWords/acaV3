@@ -1,4 +1,4 @@
-/**
+9/**
  * Firebase Cloud Functions v2 API
  * Backend-only API endpoints for acaV3
  */
@@ -7,6 +7,7 @@ import { onRequest } from 'firebase-functions/v2/https';
 import express from 'express';
 import cors from 'cors';
 import { checkText, safeResponseFor } from './guardrails';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Express app
 const app = express();
@@ -68,13 +69,17 @@ app.post('/chat', async (req, res) => {
       return;
     }
 
-    // TODO: Call Gemini API using apiKey
-    // TODO: Implement actual AI logic here
-    // const aiResponse = await callGeminiAPI(combinedText, userMessage, apiKey);
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
 
-    // Stub response for now
+    const prompt = `You are an expert in analyzing spreadsheet data. The user has provided the following data from a spreadsheet:\n\n${sheetText}\n\n The user has asked the following question:\n\n${userMessage}\n\n Provide a detailed answer to the user's question based on the provided data.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
     res.json({
-      response: 'This is a stub response. Real AI call will be implemented here.',
+      response: text,
       metadata: {
         sheetLength: sheetText?.length || 0,
         messageLength: userMessage.length,
@@ -96,6 +101,7 @@ app.post('/chat', async (req, res) => {
  */
 export const api = onRequest(
   {
+    region: 'asia-southeast1',
     // Region: us-central1 is default, can be changed if needed
     // Secrets will be automatically injected by Firebase when configured
     secrets: ['GEMINI_API_KEY'],
