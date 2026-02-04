@@ -4,7 +4,7 @@
  */
 
 import { onRequest } from 'firebase-functions/v2/https';
-import express from 'express';
+import express, { Router } from 'express';
 import cors from 'cors';
 import { checkText, safeResponseFor } from './guardrails';
 
@@ -15,10 +15,13 @@ const app = express();
 app.use(cors({ origin: true })); // Allow all origins for local development
 app.use(express.json());
 
+// API routes
+const router = Router();
+
 /**
  * Health check endpoint
  */
-app.get('/health', (req, res) => {
+router.get('/health', (req, res) => {
   res.json({ ok: true });
 });
 
@@ -26,14 +29,14 @@ app.get('/health', (req, res) => {
  * Chat endpoint
  * Accepts user message and sheet content, applies guardrails, and returns response
  */
-app.post('/chat', async (req, res) => {
+router.post('/chat', async (req, res) => {
   try {
     const { sheetText, userMessage } = req.body;
 
     // Validate input
     if (!userMessage || typeof userMessage !== 'string') {
-      res.status(400).json({ 
-        error: 'Missing or invalid userMessage' 
+      res.status(400).json({
+        error: 'Missing or invalid userMessage'
       });
       return;
     }
@@ -83,12 +86,17 @@ app.post('/chat', async (req, res) => {
     });
   } catch (error: unknown) {
     console.error('Error in /chat endpoint:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
+
+// Mount at /api (for hosting rewrites which forward the full original path)
+// and at / (for direct function URL access where the path prefix is stripped)
+app.use('/api', router);
+app.use('/', router);
 
 /**
  * Export Express app as Cloud Function v2
