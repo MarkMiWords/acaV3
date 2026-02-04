@@ -95,6 +95,6 @@ exports.api = (0, https_1.onRequest)({
     region: 'asia-southeast1',
     // Region: us-central1 is default, can be changed if needed
     // Secrets will be automatically injected by Firebase when configured
-    secrets: ['GEMINI_API_KEY'],
+    // secrets: ['GEMINI_API_KEY'],
 }, app);
 //# sourceMappingURL=index.js.map

@@ -1,42 +1,56 @@
 {
   "functions": {
     "source": "functions",
-    "runtime": "nodejs22"
+    "runtime": "nodejs20"
   },
   "hosting": {
     "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "/api/**",
         "function": "api"
       },
       {
-        "source": "**",
+        "source": "!**/*.*",
         "destination": "/index.html"
       }
     ]
   },
   "emulators": {
+    "singleProjectMode": true,
     "hosting": {
-      "host": "127.0.0.1"
+      "host": "127.0.0.1",
+      "port": 5000
     },
     "functions": {
-      "host": "127.0.0.1"
+      "host": "127.0.0.1",
+      "port": 5001
     },
     "hub": {
-      "host": "127.0.0.1"
+      "host": "127.0.0.1",
+      "port": 4400
     },
     "ui": {
-      "host": "127.0.0.1"
+      "enabled": true,
+      "host": "127.0.0.1",
+      "port": 4000
     },
     "logging": {
-      "host": "127.0.0.1"
+      "host": "127.0.0.1",
+      "port": 4500
     },
     "eventarc": {
-      "host": "127.0.0.1"
+      "host": "127.0.0.1",
+      "port": 9299
     },
     "tasks": {
-      "host": "127.0.0.1"
+      "host": "127.0.0.1",
+      "port": 9499
     }
   }
 }

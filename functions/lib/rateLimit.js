@@ -17,10 +17,11 @@ function rateLimitMiddleware(req, res, next) {
         entry.count += 1;
     }
     if (entry.count > MAX_REQUESTS) {
-        return res.status(429).json({
+        res.status(429).json({
             error: "Rate limit exceeded. Please wait and try again.",
             requestId: req.requestId
         });
+        return;
     }
     next();
 }
