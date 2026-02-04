@@ -3,14 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>acaV3</title>
+  <title>A Captive Audience</title>
+  <meta name="description" content="A digital storytelling and media platform curating authentic human experiences. Built at the intersection of literature, justice, technology, and empathy.">
+  <link rel="stylesheet" href="/site.css">
+  <style>
+    /* ── Home-specific styles ── */
+    .hero-home {
+      text-align: center;
+      padding: 4rem 1.5rem 3rem;
+    }
+    .hero-home h1 {
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      margin: 0 0 0.5rem;
+      font-weight: 900;
+    }
+    .hero-home .tagline {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--muted);
+      margin: 0 0 2rem;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+
+    .split-card {
+      position: relative;
+      border: 1px solid var(--cardBorder);
+      background: var(--card);
+      border-radius: 16px;
+      padding: 2.5rem 1.75rem;
+      backdrop-filter: blur(8px);
+      text-align: center;
+      transition: border-color 0.3s, transform 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      overflow: hidden;
+    }
+    .split-card:hover {
+      border-color: rgba(230,126,34,0.3);
+      transform: translateY(-2px);
+    }
+    .split-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+      border-radius: 16px;
+      background: radial-gradient(ellipse at center, var(--accent-glow), transparent 70%);
+      pointer-events: none;
+    }
+    .split-card:hover::after {
+      opacity: 1;
+    }
+    .split-card__icon {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+    .split-card h2 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+    .split-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 28ch;
+    }
+
+    .mission-strip {
+      text-align: center;
+      margin-top: 3rem;
+      padding: 0 1rem;
+    }
+    .mission-strip p {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 600px) {
+      .split { grid-template-columns: 1fr; }
+      .hero-home { padding: 2.5rem 1rem 2rem; }
+    }
+  </style>
 </head>
+
 <body>
-  <h1>acaV3 API Test</h1>
-  <nav>
-    <a href="/about.html">About</a>
-  </nav>
-  <pre id="status">Loading...</pre>
-  <script src="/app.js"></script>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Home">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span class="brand__name">A Captive Audience</span>
+    </a>
+    <nav class="nav">
+      <a class="active" href="/">Home</a>
+      <a href="/books.html">Book</a>
+      <a href="/about.html">About</a>
+    </nav>
+  </header>
+
+  <main class="stage">
+    <section class="hero-home">
+      <span class="badge">Under Construction</span>
+      <h1 style="margin-top: 1.25rem;">A Captive <span class="accent">Audience</span></h1>
+      <p class="tagline">Stories forged from the inside out</p>
+    </section>
+
+    <section class="split">
+      <a class="split-card" href="/books.html">
+        <span class="split-card__icon">&#x1F4D6;</span>
+        <h2>Read</h2>
+        <p>The IVO Trap — our first publication. Available now.</p>
+      </a>
+
+      <a class="split-card" href="/about.html">
+        <span class="split-card__icon">&#x1F525;</span>
+        <h2>The Forge</h2>
+        <p>A writing workspace being built for voices that matter.</p>
+      </a>
+    </section>
+
+    <section class="mission-strip">
+      <hr class="divider">
+      <p>
+        A digital storytelling and media platform curating authentic human experiences.
+        Built at the intersection of literature, justice, technology, and empathy.
+      </p>
+      <hr class="divider">
+    </section>
+
+    <footer class="footer">
+      <p>&copy; 2026 A Captive Audience &middot; <span class="muted">Mark Mi Words Studio</span></p>
+      <p class="fine">This site is being built in stages. More is coming.</p>
+    </footer>
+  </main>
 </body>
 </html>

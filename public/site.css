@@ -1,0 +1,271 @@
+/* ── A Captive Audience — shared site styles ── */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Inter:wght@300;400;600;700&display=swap');
+
+:root {
+  --bg: #050505;
+  --bg-raised: rgba(255,255,255,0.04);
+  --fg: #e6e6e6;
+  --muted: #9aa0a6;
+  --accent: #e67e22;
+  --accent-dark: #d35400;
+  --accent-light: #ff9f43;
+  --accent-glow: rgba(230,126,34,0.25);
+  --card: rgba(255,255,255,0.04);
+  --cardBorder: rgba(255,255,255,0.08);
+  --serif: 'Playfair Display', Georgia, serif;
+  --sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-weight: 300;
+  line-height: 1.65;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Ambient background ── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 20% 0%, var(--accent-glow), transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(201,162,39,0.08), transparent 50%);
+  pointer-events: none;
+}
+
+/* ── Navigation ── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(5,5,5,0.7);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+.brand__mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(230,126,34,0.5), transparent 60%),
+    radial-gradient(circle at 70% 70%, rgba(255,159,67,0.25), transparent 60%),
+    rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.brand__name {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.nav {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+.nav a {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 400;
+  transition: color 0.2s, background 0.2s;
+}
+.nav a:hover {
+  color: var(--fg);
+  background: rgba(255,255,255,0.06);
+}
+.nav a.active {
+  color: var(--fg);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ── Layout ── */
+.stage {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 3rem;
+}
+
+/* ── Typography ── */
+h1, h2, h3 {
+  font-family: var(--serif);
+  font-weight: 700;
+  line-height: 1.2;
+}
+h1 { font-size: clamp(2rem, 5vw, 3rem); }
+h2 { font-size: clamp(1.2rem, 3vw, 1.5rem); }
+
+.accent { color: var(--accent); }
+.muted { color: var(--muted); }
+.serif { font-family: var(--serif); }
+.italic { font-style: italic; }
+
+/* ── Cards ── */
+.card {
+  border: 1px solid var(--cardBorder);
+  background: var(--card);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.card h2 {
+  margin: 0 0 0.75rem;
+}
+.card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: var(--sans);
+  border: none;
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.15s;
+}
+.btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.btn--primary {
+  background: var(--accent);
+  color: #050505;
+}
+.btn--ghost {
+  background: rgba(255,255,255,0.06);
+  color: var(--fg);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.btn--small {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+/* ── Chips ── */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.chip {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.3);
+}
+
+/* ── Divider ── */
+.divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin: 2rem 0;
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.footer a:hover {
+  text-decoration: underline;
+}
+.footer .fine {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+/* ── Under construction badge ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  padding: 0.3rem 0.7rem;
+  border: 1px solid rgba(230,126,34,0.3);
+  border-radius: 999px;
+  background: rgba(230,126,34,0.08);
+}
+.badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+/* ── Responsive ── */
+@media (max-width: 760px) {
+  .grid { grid-template-columns: 1fr; }
+  .topbar { padding: 0.75rem 1rem; }
+  .nav a { font-size: 0.8rem; padding: 0.35rem 0.5rem; }
+  .brand__name { font-size: 0.9rem; }
+}
+
+@media (max-width: 480px) {
+  .stage { padding: 1.5rem 1rem 2rem; }
+}

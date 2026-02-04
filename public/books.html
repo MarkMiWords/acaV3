@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The IVO Trap — A Captive Audience</title>
+  <meta name="description" content="The IVO Trap: Intervention Orders — From the Inside Out. A first-hand account of how the system works, who it serves, and what it costs.">
+  <link rel="stylesheet" href="/site.css">
+  <style>
+    /* ── Book page styles ── */
+    .book-hero {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2.5rem;
+      align-items: start;
+      margin-bottom: 2.5rem;
+    }
+
+    .book-cover {
+      position: relative;
+    }
+    .book-cover img {
+      width: 100%;
+      aspect-ratio: 16 / 27;
+      object-fit: cover;
+      border-radius: 4px;
+      display: block;
+      box-shadow:
+        0 4px 24px rgba(0,0,0,0.5),
+        0 0 60px rgba(230,126,34,0.08);
+    }
+    .book-cover::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(
+        to right,
+        rgba(0,0,0,0.4),
+        transparent
+      );
+      border-radius: 4px 0 0 4px;
+    }
+
+    .book-info {
+      padding-top: 0.5rem;
+    }
+    .book-info .badge {
+      margin-bottom: 1rem;
+    }
+    .book-title {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      margin: 0 0 0.25rem;
+      font-weight: 900;
+    }
+    .book-subtitle {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin: 0 0 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .book-description {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.8;
+      margin: 0 0 1.75rem;
+    }
+
+    .book-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .book-meta dt {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+    .book-meta dd {
+      margin: 0;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .book-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── Statistics strip ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      border: 1px solid var(--cardBorder);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.25rem 1rem;
+    }
+    .stat-card .number {
+      font-family: var(--serif);
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+    .stat-card .label {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* ── Context section ── */
+    .context {
+      margin-top: 0.5rem;
+    }
+    .context h2 {
+      margin-top: 0;
+    }
+
+    @media (max-width: 700px) {
+      .book-hero {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+      }
+      .book-cover { max-width: 220px; }
+      .book-meta { grid-template-columns: 1fr; text-align: center; }
+      .book-actions { justify-content: center; }
+      .stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Home">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span class="brand__name">A Captive Audience</span>
+    </a>
+    <nav class="nav">
+      <a href="/">Home</a>
+      <a class="active" href="/books.html">Book</a>
+      <a href="/about.html">About</a>
+    </nav>
+  </header>
+
+  <main class="stage">
+    <section class="book-hero">
+      <div class="book-cover">
+        <img
+          src="https://images.unsplash.com/photo-1541829081725-6f1c93bb3c24?q=80&w=800&auto=format&fit=crop"
+          alt="The IVO Trap book cover"
+          loading="eager"
+        >
+      </div>
+
+      <div class="book-info">
+        <span class="badge">First Edition</span>
+        <h1 class="book-title">The IVO <span class="accent">Trap</span></h1>
+        <p class="book-subtitle">Intervention Orders: From the Inside Out</p>
+
+        <p class="book-description">
+          There is no way of knowing how many family violence orders are enforced
+          across Australia. What we do know is how many have wound up in court.
+          In 2023&ndash;24, 42% of all civil cases finalised in Australian Magistrates'
+          Courts involved originating applications for domestic violence
+          orders &mdash; around 131,000 cases.
+        </p>
+        <p class="book-description">
+          This book examines the system from the perspective of those inside it.
+          Not the policy makers, not the advocates, not the commentators &mdash;
+          but the people whose lives are reshaped by a single piece of paper.
+        </p>
+
+        <dl class="book-meta">
+          <div>
+            <dt>Author</dt>
+            <dd>Mark Mi Words</dd>
+          </div>
+          <div>
+            <dt>Published</dt>
+            <dd>2024</dd>
+          </div>
+          <div>
+            <dt>Publisher</dt>
+            <dd>A Captive Audience</dd>
+          </div>
+        </dl>
+
+        <div class="book-actions">
+          <a class="btn btn--primary" href="https://www.ingramspark.com/" target="_blank" rel="noopener">
+            Acquire Physical Edition
+          </a>
+          <a class="btn btn--ghost" href="/about.html">
+            About the Platform
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <section class="stats">
+      <div class="stat-card">
+        <span class="number">131K</span>
+        <span class="label">DVO cases finalised (2023&ndash;24)</span>
+      </div>
+      <div class="stat-card">
+        <span class="number">42%</span>
+        <span class="label">Of all Magistrates' Court civil cases</span>
+      </div>
+      <div class="stat-card">
+        <span class="number">1</span>
+        <span class="label">Piece of paper that changes everything</span>
+      </div>
+    </section>
+
+    <section class="card context">
+      <h2>Why this book exists</h2>
+      <p>
+        The conversation around intervention orders in Australia is dominated by
+        institutions. The courts publish statistics. Advocates push for reform.
+        Media covers the extremes. But the daily reality of living under &mdash; or
+        being subject to &mdash; an order is rarely heard from the people who
+        experience it first-hand.
+      </p>
+      <p style="margin-top: 1rem;">
+        <em>The IVO Trap</em> is not an argument for or against the system.
+        It is a record of what the system looks like from the inside out.
+      </p>
+    </section>
+
+    <footer class="footer">
+      <p>&copy; 2026 A Captive Audience &middot; <span class="muted">Mark Mi Words Studio</span></p>
+      <p class="fine">
+        <a href="/">Home</a> &middot; <a href="/about.html">About the Platform</a>
+      </p>
+    </footer>
+  </main>
+</body>
+</html>
