@@ -12,7 +12,7 @@ const MAX_REQUESTS = 30;
 
 const ipMap: Record<string, RateLimitEntry> = {};
 
-export function rateLimitMiddleware(req: Request, res: Response, next: NextFunction) {
+export function rateLimitMiddleware(req: Request, res: Response, next: NextFunction): void {
   const ip = req.ip || (req.headers["x-forwarded-for"] as string) || "unknown";
   const now = Date.now();
   let entry = ipMap[ip as string];
@@ -23,10 +23,10 @@ export function rateLimitMiddleware(req: Request, res: Response, next: NextFunct
     entry.count += 1;
   }
   if (entry.count > MAX_REQUESTS) {
-    return res.status(429).json({
+    res.status(429).json({
       error: "Rate limit exceeded. Please wait and try again.",
-      requestId: (req as any).requestId
     });
+    return;
   }
   next();
 }

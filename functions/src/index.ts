@@ -93,12 +93,17 @@ app.post('/chat', async (req, res) => {
 /**
  * Export Express app as Cloud Function v2
  * Region can be configured via firebase.json or deployment flags
+ *
+ * Note: GEMINI_API_KEY is read from process.env at request time.
+ * - In production, set it via: firebase functions:secrets:set GEMINI_API_KEY
+ *   and uncomment the secrets option below once deployed.
+ * - For local emulator development, create functions/.secret.local with:
+ *   GEMINI_API_KEY=your-key-here
  */
 export const api = onRequest(
   {
-    // Region: us-central1 is default, can be changed if needed
-    // Secrets will be automatically injected by Firebase when configured
-    secrets: ['GEMINI_API_KEY'],
+    // Uncomment the line below when deploying to production with a secret set:
+    // secrets: ['GEMINI_API_KEY'],
   },
   app
 );
