@@ -1,25 +1,21 @@
-9/**
+/**
  * Firebase Cloud Functions v2 API
  * Backend-only API endpoints for acaV3
  */
 
 import { onRequest } from 'firebase-functions/v2/https';
-import express from 'express';
+import express, { Router } from 'express';
 import cors from 'cors';
 import { checkText, safeResponseFor } from './guardrails';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Express app
-const app = express();
-
-// Middleware
-app.use(cors({ origin: true })); // Allow all origins for local development
-app.use(express.json());
+// Create a router to hold all the API routes
+const apiRouter = Router();
 
 /**
  * Health check endpoint
  */
-app.get('/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
   res.json({ ok: true });
 });
 
@@ -27,7 +23,7 @@ app.get('/health', (req, res) => {
  * Chat endpoint
  * Accepts user message and sheet content, applies guardrails, and returns response
  */
-app.post('/chat', async (req, res) => {
+apiRouter.post('/chat', async (req, res) => {
   try {
     const { sheetText, userMessage } = req.body;
 
@@ -95,6 +91,19 @@ app.post('/chat', async (req, res) => {
   }
 });
 
+// Initialize the main Express app
+const app = express();
+
+// Middleware
+app.use(cors({ origin: true }));
+app.use(express.json());
+
+// Mount the router at both the root and /api
+// This allows the function to handle requests from both the hosting rewrite and direct invocation
+app.use('/', apiRouter);
+app.use('/api', apiRouter);
+
+
 /**
  * Export Express app as Cloud Function v2
  * Region can be configured via firebase.json or deployment flags
@@ -102,7 +111,6 @@ app.post('/chat', async (req, res) => {
 export const api = onRequest(
   {
     region: 'asia-southeast1',
-    // Region: us-central1 is default, can be changed if needed
     // Secrets will be automatically injected by Firebase when configured
     // secrets: ['GEMINI_API_KEY'],
   },

@@ -1,34 +1,64 @@
 "use strict";
+/**
+ * Firebase Cloud Functions v2 API
+ * Backend-only API endpoints for acaV3
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.api = void 0;
-9; /**
- * Firebase Cloud Functions v2 API
- * Backend-only API endpoints for acaV3
- */
 const https_1 = require("firebase-functions/v2/https");
-const express_1 = __importDefault(require("express"));
+const express_1 = __importStar(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const guardrails_1 = require("./guardrails");
 const generative_ai_1 = require("@google/generative-ai");
-// Initialize Express app
-const app = (0, express_1.default)();
-// Middleware
-app.use((0, cors_1.default)({ origin: true })); // Allow all origins for local development
-app.use(express_1.default.json());
+// Create a router to hold all the API routes
+const apiRouter = (0, express_1.Router)();
 /**
  * Health check endpoint
  */
-app.get('/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
     res.json({ ok: true });
 });
 /**
  * Chat endpoint
  * Accepts user message and sheet content, applies guardrails, and returns response
  */
-app.post('/chat', async (req, res) => {
+apiRouter.post('/chat', async (req, res) => {
     try {
         const { sheetText, userMessage } = req.body;
         // Validate input
@@ -87,13 +117,21 @@ app.post('/chat', async (req, res) => {
         });
     }
 });
+// Initialize the main Express app
+const app = (0, express_1.default)();
+// Middleware
+app.use((0, cors_1.default)({ origin: true }));
+app.use(express_1.default.json());
+// Mount the router at both the root and /api
+// This allows the function to handle requests from both the hosting rewrite and direct invocation
+app.use('/', apiRouter);
+app.use('/api', apiRouter);
 /**
  * Export Express app as Cloud Function v2
  * Region can be configured via firebase.json or deployment flags
  */
 exports.api = (0, https_1.onRequest)({
     region: 'asia-southeast1',
-    // Region: us-central1 is default, can be changed if needed
     // Secrets will be automatically injected by Firebase when configured
     // secrets: ['GEMINI_API_KEY'],
 }, app);
