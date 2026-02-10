@@ -415,7 +415,7 @@ function initPanelResizing() {
     
     resizer.addEventListener('mousedown', (e) => {
       startX = e.clientX;
-      startWidth = is  LeftResizer ? state.panelWidths.left : state.panelWidths.right;
+      startWidth = isLeftResizer ? state.panelWidths.left : state.panelWidths.right;
       
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
