@@ -3,60 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Forge</title>
-  <link rel="stylesheet" href="/styles.css">
+  <title>acaV3 - API Test</title>
   <link rel="manifest" href="/manifest.json">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    .status-ok {
+      color: #28a745;
+    }
+    .status-error {
+      color: #dc3545;
+    }
+  </style>
 </head>
 <body>
-
-  <div class="container">
-    <!-- Sidebar for managing writing sheets -->
-    <aside class="sidebar">
-      <h3>Sheets</h3>
-      <ul id="sheet-list">
-        <!-- Sheet items will be dynamically inserted here -->
-      </ul>
-      <button id="new-sheet">New Sheet</button>
-    </aside>
-
-    <!-- Main editor pane -->
-    <main class="editor-pane">
-      <input type="text" id="sheet-title" placeholder="Sheet Title">
-      <textarea id="sheet-content" placeholder="Start writing..."></textarea>
-      <div class="revision-buttons">
-          <button class="revise-btn" data-revision-type="improve">Improve</button>
-          <button class="revise-btn" data-revision-type="expand">Expand</button>
-          <button class="revise-btn" data-revision-type="summarize">Summarize</button>
-      </div>
-      <div id="revision-notes"></div>
-    </main>
-
-    <!-- Chat and tools pane -->
-    <aside class="chat-pane">
-      <div id="chat-history">
-        <p>Welcome to The Forge. Your writing partner is ready to assist.</p>
-      </div>
-      <form id="chat-form">
-        <input type="text" id="chat-input" placeholder="Ask a question or give a command...">
-        <button type="submit">Send</button>
-      </form>
-      <div id="connection-status"></div>
-    </aside>
-  </div>
-
-  <!-- Pseudonym selection modal (initially hidden) -->
-  <div id="pseudonym-modal" class="modal hidden">
-      <div class="modal-content">
-          <h2>Choose Your Pseudonym</h2>
-          <p>You write under a pseudonym to protect your privacy.</p>
-          <ul id="pseudonym-list">
-              <!-- Pseudonyms will be dynamically inserted here -->
-          </ul>
-          <button id="reroll-pseudonyms">Reroll</button>
-      </div>
-  </div>
-
-
+  <h1>acaV3 API Test</h1>
+  <nav>
+    <a href="/about.html">About</a>
+  </nav>
+  <h2>API Status:</h2>
+  <pre id="status">Loading...</pre>
   <script src="/app.js"></script>
 </body>
 </html>
