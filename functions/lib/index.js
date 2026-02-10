@@ -117,6 +117,65 @@ apiRouter.post('/chat', async (req, res) => {
         });
     }
 });
+/**
+ * WRAP Partner endpoint
+ * Mock endpoint for guided writing assistance
+ */
+apiRouter.post('/partner', async (req, res) => {
+    try {
+        const { message, sheetContent } = req.body;
+        // Validate input
+        if (!message || typeof message !== 'string') {
+            res.status(400).json({
+                error: 'Missing or invalid message'
+            });
+            return;
+        }
+        // Run guardrails check
+        const guardrailResult = (0, guardrails_1.checkText)(message);
+        // If blocked, return safe response
+        if (!guardrailResult.allowed) {
+            res.status(400).json({
+                error: 'Content blocked by safety filters',
+                message: (0, guardrails_1.safeResponseFor)(guardrailResult.category),
+                category: guardrailResult.category,
+            });
+            return;
+        }
+        // Mock responses for now (will be replaced with real AI later)
+        const mockResponses = [
+            {
+                response: "That's an interesting point. Could you tell me more about what led to that moment?",
+                suggestion: null
+            },
+            {
+                response: "I can help you expand on that. Here's a suggestion:",
+                suggestion: "Consider adding sensory details like what you saw, heard, or felt in that moment."
+            },
+            {
+                response: "Let's work on making this clearer.",
+                suggestion: "Try rephrasing this in your own words, as if you were telling a friend."
+            }
+        ];
+        // Random selection for demo
+        const response = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+        res.json({
+            ...response,
+            metadata: {
+                messageLength: message.length,
+                sheetLength: sheetContent?.length || 0,
+                guardrailsPassed: true,
+            },
+        });
+    }
+    catch (error) {
+        console.error('Error in /partner endpoint:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+});
 // Initialize the main Express app
 const app = (0, express_1.default)();
 // Middleware

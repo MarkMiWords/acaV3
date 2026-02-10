@@ -3,40 +3,105 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>acaV3 - API Test</title>
+  <title>The Forge - ACA V3</title>
+  <link rel="stylesheet" href="/styles.css">
   <link rel="manifest" href="/manifest.json">
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      line-height: 1.6;
-    }
-    h1 {
-      color: #333;
-    }
-    pre {
-      background: #f4f4f4;
-      padding: 15px;
-      border-radius: 5px;
-      overflow-x: auto;
-    }
-    .status-ok {
-      color: #28a745;
-    }
-    .status-error {
-      color: #dc3545;
-    }
-  </style>
 </head>
 <body>
-  <h1>acaV3 API Test</h1>
-  <nav>
-    <a href="/about.html">About</a>
-  </nav>
-  <h2>API Status:</h2>
-  <pre id="status">Loading...</pre>
+  <!-- Main Workspace Container -->
+  <div class="forge-workspace">
+    
+    <!-- Left Panel: Navigator -->
+    <aside class="navigator-panel" id="navigator">
+      <div class="navigator-header">
+        <h2>Navigator</h2>
+        <button id="home-btn" class="nav-btn" title="Home">🏠</button>
+      </div>
+      
+      <div class="navigator-actions">
+        <button id="new-sheet-btn" class="primary-btn">+ New WRAP Sheet</button>
+      </div>
+      
+      <div class="sheet-list-container">
+        <h3>Sheets</h3>
+        <ul id="sheet-list" class="sheet-list">
+          <!-- Sheets will be dynamically inserted here -->
+        </ul>
+      </div>
+    </aside>
+    
+    <!-- Resizer between Navigator and Sheet -->
+    <div class="resizer" data-resizer="left"></div>
+    
+    <!-- Center Panel: Sheet Editor -->
+    <main class="sheet-panel" id="sheet-panel">
+      <div class="sheet-header">
+        <input 
+          type="text" 
+          id="sheet-title" 
+          class="sheet-title-input" 
+          placeholder="Untitled Sheet"
+          maxlength="100"
+        >
+        <div class="sheet-meta">
+          <span id="word-count" class="word-count">0 words</span>
+          <span id="save-status" class="save-status">Saved</span>
+        </div>
+      </div>
+      
+      <div 
+        id="sheet-editor" 
+        class="sheet-editor" 
+        contenteditable="true"
+        spellcheck="true"
+        data-placeholder="Start writing..."
+      ></div>
+      
+      <div class="revise-tools">
+        <button id="rinse-btn" class="tool-btn" title="Remove double spaces, normalize punctuation">Rinse</button>
+        <button id="wash-btn" class="tool-btn" title="Suggest paragraph breaks">Wash</button>
+        <button id="scrub-btn" class="tool-btn" title="Structural suggestions (coming soon)" disabled>Scrub</button>
+      </div>
+    </main>
+    
+    <!-- Resizer between Sheet and WRAP Partner -->
+    <div class="resizer" data-resizer="right"></div>
+    
+    <!-- Right Panel: WRAP Partner -->
+    <aside class="partner-panel" id="partner-panel">
+      <div class="partner-header">
+        <h2>WRAP Partner</h2>
+      </div>
+      
+      <div id="partner-messages" class="partner-messages">
+        <div class="partner-message system">
+          <p>Welcome to The Forge. I'm here to help you express your words.</p>
+        </div>
+      </div>
+      
+      <div class="partner-input-area">
+        <textarea 
+          id="partner-input" 
+          class="partner-input" 
+          placeholder="Ask for help or guidance..."
+          rows="3"
+        ></textarea>
+        <button id="partner-send-btn" class="primary-btn">Send</button>
+      </div>
+    </aside>
+    
+  </div>
+  
+  <!-- Word Limit Warning Modal -->
+  <div id="word-warning-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Approaching word limit</h3>
+      <p>You're at <span id="warning-word-count">900</span> words. Consider wrapping up this scene or creating a new sheet.</p>
+      <button id="close-warning-btn" class="primary-btn">Continue Writing</button>
+      <button id="new-sheet-from-warning-btn" class="secondary-btn">Create New Sheet</button>
+    </div>
+  </div>
+  
   <script src="/app.js"></script>
 </body>
 </html>
