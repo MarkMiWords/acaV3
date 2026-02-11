@@ -26,46 +26,22 @@ export interface GuardrailResult {
 export function checkText(text: string): GuardrailResult {
   const lowerText = text.toLowerCase();
 
-  // Basic keyword-based checks (production would use Gemini Safety API)
-  const harassmentPatterns = /\b(threat|attack|harm|kill|hurt)\b/i;
-  const hateSpeechPatterns = /\b(racist|sexist|bigot)\b/i;
-  const sexualPatterns = /\b(explicit sexual content placeholder)\b/i;
-  const dangerousPatterns = /\b(bomb|weapon|explosive|terrorist)\b/i;
-
-  if (harassmentPatterns.test(lowerText)) {
-    return {
-      allowed: false,
-      category: 'harassment',
-      reason: 'Content contains threatening or harassing language',
-    };
-  }
-
-  if (hateSpeechPatterns.test(lowerText)) {
-    return {
-      allowed: false,
-      category: 'hate-speech',
-      reason: 'Content contains hate speech',
-    };
-  }
-
-  if (sexualPatterns.test(lowerText)) {
-    return {
-      allowed: false,
-      category: 'sexual',
-      reason: 'Content contains inappropriate sexual content',
-    };
-  }
+  // Relaxed checks for writing/storytelling context
+  // Production would use Gemini Safety API with contextual understanding
+  
+  // Only block extremely explicit harmful instructions (not storytelling)
+  const dangerousPatterns = /\b(how to make.*bomb|build.*explosive|instructions.*weapon)\b/i;
 
   if (dangerousPatterns.test(lowerText)) {
     return {
       allowed: false,
       category: 'dangerous',
-      reason: 'Content contains dangerous or illegal activity references',
+      reason: 'Content contains dangerous instructions',
     };
   }
 
   // Check for excessive length (potential spam)
-  if (text.length > 10000) {
+  if (text.length > 50000) {
     return {
       allowed: false,
       category: 'spam',
@@ -73,6 +49,7 @@ export function checkText(text: string): GuardrailResult {
     };
   }
 
+  // Allow everything else - this is a writing tool for personal narratives
   return {
     allowed: true,
     category: 'allowed',
