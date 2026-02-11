@@ -3,95 +3,189 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Forge - ACA V3</title>
+  <title>Captive Audience</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="manifest" href="/manifest.json">
 </head>
 <body>
   <!-- Main Workspace Container -->
   <div class="forge-workspace">
-    
+
     <!-- Left Panel: Navigator -->
     <aside class="navigator-panel" id="navigator">
-      <div class="navigator-header">
-        <h2>Navigator</h2>
-        <button id="home-btn" class="nav-btn" title="Home">🏠</button>
-      </div>
-      
       <div class="navigator-actions">
-        <button id="new-sheet-btn" class="primary-btn">+ New WRAP Sheet</button>
+        <button id="new-sheet-btn" class="nav-action-btn">New Sheet</button>
+        <button id="live-link-btn" class="nav-action-btn">Live Link</button>
       </div>
-      
+
+      <div class="nav-section">
+        <span class="nav-link" id="sync-diagnostic">Sync Diagnostic</span>
+      </div>
+
+      <div class="nav-section currently-editing">
+        <span class="nav-label">Currently Editing:</span>
+        <span class="nav-editing-title" id="current-editing-title">Untitled Sheet</span>
+      </div>
+
       <div class="sheet-list-container">
-        <h3>Sheets</h3>
         <ul id="sheet-list" class="sheet-list">
           <!-- Sheets will be dynamically inserted here -->
         </ul>
       </div>
     </aside>
-    
+
     <!-- Resizer between Navigator and Sheet -->
     <div class="resizer" data-resizer="left"></div>
-    
-    <!-- Center Panel: Sheet Editor -->
+
+    <!-- Center Panel: Sheet Editor with WRAP Tabs -->
     <main class="sheet-panel" id="sheet-panel">
-      <div class="sheet-header">
-        <input 
-          type="text" 
-          id="sheet-title" 
-          class="sheet-title-input" 
-          placeholder="Untitled Sheet"
-          maxlength="100"
-        >
-        <div class="sheet-meta">
-          <span id="word-count" class="word-count">0 words</span>
-          <span id="save-status" class="save-status">Saved</span>
+      <!-- WRAP Tabs -->
+      <div class="wrap-tabs">
+        <button class="wrap-tab active" data-tab="write">Write</button>
+        <button class="wrap-tab" data-tab="revise">Revise</button>
+        <button class="wrap-tab" data-tab="articulate">Articulate</button>
+        <button class="wrap-tab" data-tab="polish">Polish</button>
+      </div>
+
+      <!-- Write Tab Content -->
+      <div class="tab-content active" id="tab-write">
+        <div class="sheet-header">
+          <input
+            type="text"
+            id="sheet-title"
+            class="sheet-title-input"
+            placeholder="Untitled Sheet"
+            maxlength="100"
+          >
+        </div>
+
+        <div
+          id="sheet-editor"
+          class="sheet-editor"
+          contenteditable="true"
+          spellcheck="true"
+          data-placeholder="Start writing..."
+        ></div>
+      </div>
+
+      <!-- Revise Tab Content -->
+      <div class="tab-content" id="tab-revise">
+        <div class="tab-panel-content">
+          <h3 class="tab-panel-title">Revise Tools</h3>
+          <p class="tab-panel-desc">Clean and improve your writing while preserving your voice.</p>
+          <div class="revise-tools-grid">
+            <button id="rinse-btn" class="tool-card" title="Remove double spaces, normalize punctuation">
+              <span class="tool-card-title">Rinse</span>
+              <span class="tool-card-desc">Surface clean — spacing, punctuation, typos</span>
+            </button>
+            <button id="wash-btn" class="tool-card" title="Suggest paragraph breaks">
+              <span class="tool-card-title">Wash</span>
+              <span class="tool-card-desc">Clarity — paragraphs, readability, repetition</span>
+            </button>
+            <button id="scrub-btn" class="tool-card" title="Structural suggestions (coming soon)" disabled>
+              <span class="tool-card-title">Scrub</span>
+              <span class="tool-card-desc">Structure — order, transitions, trimming</span>
+            </button>
+          </div>
         </div>
       </div>
-      
-      <div 
-        id="sheet-editor" 
-        class="sheet-editor" 
-        contenteditable="true"
-        spellcheck="true"
-        data-placeholder="Start writing..."
-      ></div>
-      
-      <div class="revise-tools">
-        <button id="rinse-btn" class="tool-btn" title="Remove double spaces, normalize punctuation">Rinse</button>
-        <button id="wash-btn" class="tool-btn" title="Suggest paragraph breaks">Wash</button>
-        <button id="scrub-btn" class="tool-btn" title="Structural suggestions (coming soon)" disabled>Scrub</button>
+
+      <!-- Articulate Tab Content -->
+      <div class="tab-content" id="tab-articulate">
+        <div class="tab-panel-content">
+          <button id="calibrate-clone-btn" class="calibrate-btn">Calibrate My Own Clone</button>
+
+          <div class="calibration-group">
+            <label class="calibration-label">Gender Matrix</label>
+            <div class="calibration-toggles" id="gender-matrix">
+              <button class="toggle-btn" data-value="M">M</button>
+              <button class="toggle-btn" data-value="F">F</button>
+              <button class="toggle-btn active" data-value="M2">M</button>
+            </div>
+          </div>
+
+          <div class="calibration-group">
+            <label class="calibration-label">Calibration Tone</label>
+            <div class="calibration-toggles" id="calibration-tone">
+              <button class="toggle-btn" data-value="S">S</button>
+              <button class="toggle-btn active" data-value="M">M</button>
+              <button class="toggle-btn" data-value="L">L</button>
+            </div>
+          </div>
+
+          <div class="calibration-group">
+            <label class="calibration-label">Regional Accent</label>
+            <div class="calibration-toggles" id="regional-accent">
+              <button class="toggle-btn active" data-value="AU">AU</button>
+              <button class="toggle-btn" data-value="UK">UK</button>
+              <button class="toggle-btn" data-value="US">US</button>
+            </div>
+          </div>
+
+          <button id="apply-transformation-btn" class="apply-transform-btn">Apply Transformation</button>
+        </div>
+      </div>
+
+      <!-- Polish Tab Content -->
+      <div class="tab-content" id="tab-polish">
+        <div class="tab-panel-content">
+          <h3 class="tab-panel-title">Polish</h3>
+          <p class="tab-panel-desc">Prepare your writing for publication.</p>
+          <div class="polish-options">
+            <button class="tool-card" disabled>
+              <span class="tool-card-title">Prison Newspaper</span>
+              <span class="tool-card-desc">Format for prison newspaper submission</span>
+            </button>
+            <button class="tool-card" disabled>
+              <span class="tool-card-title">Substack Story</span>
+              <span class="tool-card-desc">Format for online publication</span>
+            </button>
+            <button class="tool-card" disabled>
+              <span class="tool-card-title">Letter</span>
+              <span class="tool-card-desc">Format as a letter</span>
+            </button>
+          </div>
+        </div>
       </div>
     </main>
-    
+
     <!-- Resizer between Sheet and WRAP Partner -->
     <div class="resizer" data-resizer="right"></div>
-    
+
     <!-- Right Panel: WRAP Partner -->
     <aside class="partner-panel" id="partner-panel">
       <div class="partner-header">
-        <h2>WRAP Partner</h2>
+        <h2>Wrap Partner</h2>
       </div>
-      
+
       <div id="partner-messages" class="partner-messages">
         <div class="partner-message system">
           <p>Welcome to The Forge. I'm here to help you express your words.</p>
         </div>
       </div>
-      
+
       <div class="partner-input-area">
-        <textarea 
-          id="partner-input" 
-          class="partner-input" 
+        <textarea
+          id="partner-input"
+          class="partner-input"
           placeholder="Ask for help or guidance..."
           rows="3"
         ></textarea>
         <button id="partner-send-btn" class="primary-btn">Send</button>
       </div>
     </aside>
-    
+
   </div>
-  
+
+  <!-- Bottom Status Bar -->
+  <div class="status-bar" id="status-bar">
+    <span class="status-item" id="status-words">Words: 0</span>
+    <span class="status-item" id="status-context">Context: Australia</span>
+    <span class="status-item" id="status-style">Style: Prison Life</span>
+    <span class="status-item" id="status-vault">Vault Secured</span>
+    <span class="status-item status-forge">Forge VT.5 Alchemist</span>
+  </div>
+
   <!-- Word Limit Warning Modal -->
   <div id="word-warning-modal" class="modal hidden">
     <div class="modal-content">
@@ -101,7 +195,7 @@
       <button id="new-sheet-from-warning-btn" class="secondary-btn">Create New Sheet</button>
     </div>
   </div>
-  
+
   <script src="/app.js"></script>
 </body>
 </html>
