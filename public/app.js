@@ -117,9 +117,9 @@ const elements = {
   sheetTitle: document.getElementById('sheet-title'),
   sheetEditor: document.getElementById('sheet-editor'),
 
-  // WRAP Tabs
-  wrapTabs: document.querySelectorAll('.wrap-tab'),
-  tabContents: document.querySelectorAll('.tab-content'),
+  // WRAP Hub
+  wrapHubBtns: document.querySelectorAll('.wrap-hub-btn'),
+  wrapDropdowns: document.querySelectorAll('.wrap-dropdown'),
 
   // Revise Tools
   rinseBtn: document.getElementById('rinse-btn'),
@@ -156,26 +156,56 @@ const elements = {
 };
 
 // ===================================================================
-// WRAP Tab Switching
+// WRAP Hub Dropdowns
 // ===================================================================
 
-function initTabs() {
-  elements.wrapTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const targetTab = tab.dataset.tab;
+function initWrapHub() {
+  elements.wrapHubBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const wrapName = btn.dataset.wrap;
 
-      // Update tab buttons
-      elements.wrapTabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
+      // Write button just focuses the editor
+      if (wrapName === 'write') {
+        closeAllDropdowns();
+        elements.sheetEditor.focus();
+        return;
+      }
 
-      // Update tab content
-      elements.tabContents.forEach(content => content.classList.remove('active'));
-      const targetContent = document.getElementById(`tab-${targetTab}`);
-      if (targetContent) {
-        targetContent.classList.add('active');
+      const dropdown = document.getElementById(`dropdown-${wrapName}`);
+      if (!dropdown) return;
+
+      const isOpen = dropdown.classList.contains('open');
+
+      // Close all dropdowns first
+      closeAllDropdowns();
+
+      // Toggle the clicked one
+      if (!isOpen) {
+        dropdown.classList.add('open');
+        btn.classList.add('open');
       }
     });
   });
+
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.wrap-btn-group')) {
+      closeAllDropdowns();
+    }
+  });
+
+  // Prevent dropdown content clicks from closing the dropdown
+  elements.wrapDropdowns.forEach(dropdown => {
+    dropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  });
+}
+
+function closeAllDropdowns() {
+  elements.wrapDropdowns.forEach(d => d.classList.remove('open'));
+  elements.wrapHubBtns.forEach(b => b.classList.remove('open'));
 }
 
 // ===================================================================
@@ -653,7 +683,7 @@ async function init() {
 
     renderSheetList();
     initPanelResizing();
-    initTabs();
+    initWrapHub();
     initCalibrationToggles();
     initEventListeners();
 

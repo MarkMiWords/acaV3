@@ -37,116 +37,116 @@
     <!-- Resizer between Navigator and Sheet -->
     <div class="resizer" data-resizer="left"></div>
 
-    <!-- Center Panel: Sheet Editor with WRAP Tabs -->
+    <!-- Center Panel: Sheet Editor with WRAP Hub -->
     <main class="sheet-panel" id="sheet-panel">
-      <!-- WRAP Tabs -->
-      <div class="wrap-tabs">
-        <button class="wrap-tab active" data-tab="write">Write</button>
-        <button class="wrap-tab" data-tab="revise">Revise</button>
-        <button class="wrap-tab" data-tab="articulate">Articulate</button>
-        <button class="wrap-tab" data-tab="polish">Polish</button>
-      </div>
-
-      <!-- Write Tab Content -->
-      <div class="tab-content active" id="tab-write">
-        <div class="sheet-header">
-          <input
-            type="text"
-            id="sheet-title"
-            class="sheet-title-input"
-            placeholder="Untitled Sheet"
-            maxlength="100"
-          >
-        </div>
-
-        <div
-          id="sheet-editor"
-          class="sheet-editor"
-          contenteditable="true"
-          spellcheck="true"
-          data-placeholder="Start writing..."
-        ></div>
-      </div>
-
-      <!-- Revise Tab Content -->
-      <div class="tab-content" id="tab-revise">
-        <div class="tab-panel-content">
-          <h3 class="tab-panel-title">Revise Tools</h3>
-          <p class="tab-panel-desc">Clean and improve your writing while preserving your voice.</p>
-          <div class="revise-tools-grid">
-            <button id="rinse-btn" class="tool-card" title="Remove double spaces, normalize punctuation">
-              <span class="tool-card-title">Rinse</span>
-              <span class="tool-card-desc">Surface clean — spacing, punctuation, typos</span>
-            </button>
-            <button id="wash-btn" class="tool-card" title="Suggest paragraph breaks">
-              <span class="tool-card-title">Wash</span>
-              <span class="tool-card-desc">Clarity — paragraphs, readability, repetition</span>
-            </button>
-            <button id="scrub-btn" class="tool-card" title="Structural suggestions (coming soon)" disabled>
-              <span class="tool-card-title">Scrub</span>
-              <span class="tool-card-desc">Structure — order, transitions, trimming</span>
+      <!-- WRAP Hub -->
+      <div class="wrap-hub">
+        <span class="wrap-hub-label">WRAP</span>
+        <div class="wrap-hub-buttons">
+          <div class="wrap-btn-group">
+            <button class="wrap-hub-btn active" data-wrap="write">
+              <span class="wrap-letter">W</span>rite
             </button>
           </div>
-        </div>
-      </div>
-
-      <!-- Articulate Tab Content -->
-      <div class="tab-content" id="tab-articulate">
-        <div class="tab-panel-content">
-          <button id="calibrate-clone-btn" class="calibrate-btn">Calibrate My Own Clone</button>
-
-          <div class="calibration-group">
-            <label class="calibration-label">Gender Matrix</label>
-            <div class="calibration-toggles" id="gender-matrix">
-              <button class="toggle-btn" data-value="M">M</button>
-              <button class="toggle-btn" data-value="F">F</button>
-              <button class="toggle-btn active" data-value="M2">M</button>
+          <div class="wrap-btn-group">
+            <button class="wrap-hub-btn" data-wrap="revise">
+              <span class="wrap-letter">R</span>evise
+              <span class="wrap-arrow">&#9662;</span>
+            </button>
+            <div class="wrap-dropdown" id="dropdown-revise">
+              <button id="rinse-btn" class="wrap-dropdown-item" title="Remove double spaces, normalize punctuation">
+                <span class="dropdown-item-title">Rinse</span>
+                <span class="dropdown-item-desc">Surface clean — spacing, punctuation, typos</span>
+              </button>
+              <button id="wash-btn" class="wrap-dropdown-item" title="Suggest paragraph breaks">
+                <span class="dropdown-item-title">Wash</span>
+                <span class="dropdown-item-desc">Clarity — paragraphs, readability, repetition</span>
+              </button>
+              <button id="scrub-btn" class="wrap-dropdown-item disabled" title="Structural suggestions (coming soon)" disabled>
+                <span class="dropdown-item-title">Scrub</span>
+                <span class="dropdown-item-desc">Structure — order, transitions, trimming</span>
+              </button>
             </div>
           </div>
-
-          <div class="calibration-group">
-            <label class="calibration-label">Calibration Tone</label>
-            <div class="calibration-toggles" id="calibration-tone">
-              <button class="toggle-btn" data-value="S">S</button>
-              <button class="toggle-btn active" data-value="M">M</button>
-              <button class="toggle-btn" data-value="L">L</button>
+          <div class="wrap-btn-group">
+            <button class="wrap-hub-btn" data-wrap="articulate">
+              <span class="wrap-letter">A</span>rticulate
+              <span class="wrap-arrow">&#9662;</span>
+            </button>
+            <div class="wrap-dropdown" id="dropdown-articulate">
+              <button id="calibrate-clone-btn" class="wrap-dropdown-item">
+                <span class="dropdown-item-title">Calibrate My Clone</span>
+                <span class="dropdown-item-desc">Train your voice profile</span>
+              </button>
+              <div class="dropdown-divider"></div>
+              <div class="calibration-group">
+                <label class="calibration-label">Gender Matrix</label>
+                <div class="calibration-toggles" id="gender-matrix">
+                  <button class="toggle-btn" data-value="M">M</button>
+                  <button class="toggle-btn" data-value="F">F</button>
+                  <button class="toggle-btn active" data-value="M2">M</button>
+                </div>
+              </div>
+              <div class="calibration-group">
+                <label class="calibration-label">Calibration Tone</label>
+                <div class="calibration-toggles" id="calibration-tone">
+                  <button class="toggle-btn" data-value="S">S</button>
+                  <button class="toggle-btn active" data-value="M">M</button>
+                  <button class="toggle-btn" data-value="L">L</button>
+                </div>
+              </div>
+              <div class="calibration-group">
+                <label class="calibration-label">Regional Accent</label>
+                <div class="calibration-toggles" id="regional-accent">
+                  <button class="toggle-btn active" data-value="AU">AU</button>
+                  <button class="toggle-btn" data-value="UK">UK</button>
+                  <button class="toggle-btn" data-value="US">US</button>
+                </div>
+              </div>
+              <button id="apply-transformation-btn" class="wrap-dropdown-action">Apply Transformation</button>
             </div>
           </div>
-
-          <div class="calibration-group">
-            <label class="calibration-label">Regional Accent</label>
-            <div class="calibration-toggles" id="regional-accent">
-              <button class="toggle-btn active" data-value="AU">AU</button>
-              <button class="toggle-btn" data-value="UK">UK</button>
-              <button class="toggle-btn" data-value="US">US</button>
+          <div class="wrap-btn-group">
+            <button class="wrap-hub-btn" data-wrap="publish">
+              <span class="wrap-letter">P</span>ublish
+              <span class="wrap-arrow">&#9662;</span>
+            </button>
+            <div class="wrap-dropdown" id="dropdown-publish">
+              <button class="wrap-dropdown-item disabled" disabled>
+                <span class="dropdown-item-title">Prison Newspaper</span>
+                <span class="dropdown-item-desc">Format for prison newspaper submission</span>
+              </button>
+              <button class="wrap-dropdown-item disabled" disabled>
+                <span class="dropdown-item-title">Substack Story</span>
+                <span class="dropdown-item-desc">Format for online publication</span>
+              </button>
+              <button class="wrap-dropdown-item disabled" disabled>
+                <span class="dropdown-item-title">Letter</span>
+                <span class="dropdown-item-desc">Format as a letter</span>
+              </button>
             </div>
           </div>
-
-          <button id="apply-transformation-btn" class="apply-transform-btn">Apply Transformation</button>
         </div>
       </div>
 
-      <!-- Polish Tab Content -->
-      <div class="tab-content" id="tab-polish">
-        <div class="tab-panel-content">
-          <h3 class="tab-panel-title">Polish</h3>
-          <p class="tab-panel-desc">Prepare your writing for publication.</p>
-          <div class="polish-options">
-            <button class="tool-card" disabled>
-              <span class="tool-card-title">Prison Newspaper</span>
-              <span class="tool-card-desc">Format for prison newspaper submission</span>
-            </button>
-            <button class="tool-card" disabled>
-              <span class="tool-card-title">Substack Story</span>
-              <span class="tool-card-desc">Format for online publication</span>
-            </button>
-            <button class="tool-card" disabled>
-              <span class="tool-card-title">Letter</span>
-              <span class="tool-card-desc">Format as a letter</span>
-            </button>
-          </div>
-        </div>
+      <!-- Sheet Editor (always visible) -->
+      <div class="sheet-header">
+        <input
+          type="text"
+          id="sheet-title"
+          class="sheet-title-input"
+          placeholder="Untitled Sheet"
+          maxlength="100"
+        >
       </div>
+
+      <div
+        id="sheet-editor"
+        class="sheet-editor"
+        contenteditable="true"
+        spellcheck="true"
+        data-placeholder="Start writing..."
+      ></div>
     </main>
 
     <!-- Resizer between Sheet and WRAP Partner -->
