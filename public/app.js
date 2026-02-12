@@ -609,6 +609,7 @@ function initLiveLink() {
 
 // Holds parsed HTML from a file upload (cleared when modal resets)
 let importedFileHtml = '';
+let importedFileTitle = '';
 
 function initImportText() {
   // Open modal
@@ -674,6 +675,7 @@ function initImportText() {
 
 function resetImportModal() {
   importedFileHtml = '';
+  importedFileTitle = '';
   elements.importTextArea.value = '';
   elements.importFileInput.value = '';
   elements.importFileName.classList.add('hidden');
@@ -697,12 +699,22 @@ function getImportHtml() {
 }
 
 function finishImport(action) {
+  // Apply extracted H1 as sheet title if present
+  if (importedFileTitle) {
+    elements.sheetTitle.value = importedFileTitle;
+    elements.currentEditingTitle.textContent = importedFileTitle;
+  }
+
   updateCurrentSheet();
   updateWordCount();
   elements.importTextModal.classList.add('hidden');
 
   const words = countWords(elements.sheetEditor.textContent);
-  addPartnerMessage(`Import complete — ${action} sheet content. Sheet now has ${words} words.`, 'system');
+  let msg = `Import complete — ${action} sheet content. Sheet now has ${words} words.`;
+  if (importedFileTitle) {
+    msg += ` Title set to "${importedFileTitle}".`;
+  }
+  addPartnerMessage(msg, 'system');
 }
 
 /**
@@ -763,6 +775,7 @@ async function handleImportFile(file) {
 /**
  * Clean imported HTML — strip scripts, styles, and heavy formatting.
  * Keep paragraphs, headings, lists, line breaks, bold, italic.
+ * Extracts the first H1 as the sheet title.
  */
 function cleanImportedHtml(html) {
   const parser = new DOMParser();
@@ -774,9 +787,15 @@ function cleanImportedHtml(html) {
   // Get body content (or full content if no body)
   const body = doc.body || doc.documentElement;
 
-  // Strip all attributes except basic ones, and remove inline styles
+  // Extract first H1 as title, then remove it from the body
+  const firstH1 = body.querySelector('h1');
+  if (firstH1) {
+    importedFileTitle = firstH1.textContent.trim();
+    firstH1.remove();
+  }
+
+  // Strip all attributes to remove inline styles and classes
   body.querySelectorAll('*').forEach(el => {
-    // Remove all attributes
     const attrs = [...el.attributes];
     attrs.forEach(attr => el.removeAttribute(attr.name));
   });
