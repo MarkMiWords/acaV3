@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WRAP Profile — The Sovereign Forge</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="profile-page">
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <a href="/" class="profile-back-link">&larr; Back to Forge</a>
+      <h1>WRAP Profile</h1>
+      <p class="profile-subtitle">Controls author identity and partner behaviour.</p>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content">
+
+      <!-- Author Identity -->
+      <section class="profile-section">
+        <h2 class="profile-section-title">Author Identity</h2>
+        <div class="profile-field">
+          <label class="profile-label" for="author-pseudonym">Pseudonym</label>
+          <input type="text" id="author-pseudonym" class="profile-input" placeholder="Auto-generated if left blank">
+          <span class="profile-field-hint">Your writing identity. A pseudonym will be generated if you don't set one.</span>
+        </div>
+      </section>
+
+      <!-- WRAP Partner Settings -->
+      <section class="profile-section">
+        <h2 class="profile-section-title">WRAP Partner Settings</h2>
+
+        <div class="profile-field">
+          <label class="profile-label" for="partner-name">Partner Name</label>
+          <input type="text" id="partner-name" class="profile-input" placeholder="Wrapp" value="Wrapp">
+        </div>
+
+        <div class="profile-field">
+          <label class="profile-label">Temperament</label>
+          <div class="temperament-slider-container">
+            <span class="temperament-label-end">Timid</span>
+            <input type="range" id="partner-temperament" class="temperament-slider" min="1" max="5" value="3" step="1">
+            <span class="temperament-label-end">Firebrand</span>
+          </div>
+          <div class="temperament-ticks">
+            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+          </div>
+        </div>
+
+        <div class="profile-field">
+          <label class="profile-label">Playback Voice</label>
+          <div class="profile-toggles" id="playback-voice">
+            <button class="toggle-btn" data-value="male">Male</button>
+            <button class="toggle-btn active" data-value="female">Female</button>
+            <button class="toggle-btn" data-value="neutral">Neutral</button>
+          </div>
+        </div>
+
+        <div class="profile-field">
+          <label class="profile-label">Accent</label>
+          <div class="profile-toggles" id="playback-accent">
+            <button class="toggle-btn active" data-value="AU">AU</button>
+            <button class="toggle-btn" data-value="UK">UK</button>
+            <button class="toggle-btn" data-value="US">US</button>
+          </div>
+        </div>
+
+        <div class="profile-field">
+          <label class="profile-label">Pace</label>
+          <div class="profile-toggles" id="playback-pace">
+            <button class="toggle-btn" data-value="slow">Slow</button>
+            <button class="toggle-btn active" data-value="normal">Normal</button>
+            <button class="toggle-btn" data-value="fast">Fast</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- UI Settings -->
+      <section class="profile-section">
+        <h2 class="profile-section-title">Interface</h2>
+
+        <div class="profile-field">
+          <label class="profile-label">Theme</label>
+          <div class="profile-toggles" id="theme-select">
+            <button class="toggle-btn active" data-value="dark">Dark</button>
+            <button class="toggle-btn" data-value="light">Light</button>
+            <button class="toggle-btn" data-value="sepia">Sepia</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Session -->
+      <section class="profile-section">
+        <h2 class="profile-section-title">Session</h2>
+        <button id="sync-profile-btn" class="profile-action-btn">Synchronize Profile &amp; Identity</button>
+        <span class="profile-field-hint">Resets your session and applies all profile changes.</span>
+      </section>
+
+    </div>
+
+    <!-- Profile Footer -->
+    <div class="profile-footer">
+      <span class="profile-footer-text">The Sovereign Forge VT.5</span>
+    </div>
+
+  </div>
+
+  <script src="/profile.js"></script>
+</body>
+</html>

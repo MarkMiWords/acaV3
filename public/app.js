@@ -1,6 +1,6 @@
 /**
  * ===================================================================
- * Captive Audience - Application Logic
+ * The Sovereign Forge - Application Logic
  * ACA V3 - Local-first writing workspace
  * ===================================================================
  */
@@ -90,14 +90,10 @@ const state = {
   sheets: [],
   saveTimeout: null,
   lastSavedContent: '',
+  liveLinkActive: false,
   panelWidths: {
     left: 220,
     right: 320
-  },
-  calibration: {
-    gender: 'M2',
-    tone: 'M',
-    accent: 'AU'
   }
 };
 
@@ -107,9 +103,10 @@ const state = {
 
 const elements = {
   // Navigator
+  homeBtn: document.getElementById('home-btn'),
   newSheetBtn: document.getElementById('new-sheet-btn'),
   liveLinkBtn: document.getElementById('live-link-btn'),
-  syncDiagnostic: document.getElementById('sync-diagnostic'),
+  saveToVaultBtn: document.getElementById('save-to-vault-btn'),
   currentEditingTitle: document.getElementById('current-editing-title'),
   sheetList: document.getElementById('sheet-list'),
 
@@ -124,14 +121,9 @@ const elements = {
   // Revise Tools
   rinseBtn: document.getElementById('rinse-btn'),
   washBtn: document.getElementById('wash-btn'),
-  scrubBtn: document.getElementById('scrub-btn'),
 
-  // Articulate Controls
-  calibrateCloneBtn: document.getElementById('calibrate-clone-btn'),
-  applyTransformBtn: document.getElementById('apply-transformation-btn'),
-  genderMatrix: document.getElementById('gender-matrix'),
-  calibrationTone: document.getElementById('calibration-tone'),
-  regionalAccent: document.getElementById('regional-accent'),
+  // Help Modes
+  helpModeBtns: document.querySelectorAll('.help-mode-btn'),
 
   // WRAP Partner
   partnerMessages: document.getElementById('partner-messages'),
@@ -141,14 +133,19 @@ const elements = {
   // Status Bar
   statusWords: document.getElementById('status-words'),
   statusContext: document.getElementById('status-context'),
-  statusStyle: document.getElementById('status-style'),
   statusVault: document.getElementById('status-vault'),
 
-  // Modals
+  // Word Warning Modal
   wordWarningModal: document.getElementById('word-warning-modal'),
   warningWordCount: document.getElementById('warning-word-count'),
   closeWarningBtn: document.getElementById('close-warning-btn'),
   newSheetFromWarningBtn: document.getElementById('new-sheet-from-warning-btn'),
+
+  // Live Link Modal
+  liveLinkModal: document.getElementById('live-link-modal'),
+  guardrailsAcceptCheck: document.getElementById('guardrails-accept-check'),
+  initializeLiveLinkBtn: document.getElementById('initialize-live-link-btn'),
+  cancelLiveLinkBtn: document.getElementById('cancel-live-link-btn'),
 
   // Panels & Resizers
   workspace: document.querySelector('.forge-workspace'),
@@ -164,13 +161,6 @@ function initWrapHub() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const wrapName = btn.dataset.wrap;
-
-      // Write button just focuses the editor
-      if (wrapName === 'write') {
-        closeAllDropdowns();
-        elements.sheetEditor.focus();
-        return;
-      }
 
       const dropdown = document.getElementById(`dropdown-${wrapName}`);
       if (!dropdown) return;
@@ -206,39 +196,6 @@ function initWrapHub() {
 function closeAllDropdowns() {
   elements.wrapDropdowns.forEach(d => d.classList.remove('open'));
   elements.wrapHubBtns.forEach(b => b.classList.remove('open'));
-}
-
-// ===================================================================
-// Calibration Toggle Controls
-// ===================================================================
-
-function initCalibrationToggles() {
-  // Gender Matrix toggles
-  elements.genderMatrix.querySelectorAll('.toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      elements.genderMatrix.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.calibration.gender = btn.dataset.value;
-    });
-  });
-
-  // Calibration Tone toggles
-  elements.calibrationTone.querySelectorAll('.toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      elements.calibrationTone.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.calibration.tone = btn.dataset.value;
-    });
-  });
-
-  // Regional Accent toggles
-  elements.regionalAccent.querySelectorAll('.toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      elements.regionalAccent.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.calibration.accent = btn.dataset.value;
-    });
-  });
 }
 
 // ===================================================================
@@ -279,7 +236,6 @@ async function loadSheet(sheetId) {
     elements.sheetEditor.innerHTML = sheet.content;
     state.lastSavedContent = sheet.content;
 
-    // Update "Currently Editing" in sidebar
     elements.currentEditingTitle.textContent = sheet.title || 'Untitled Sheet';
 
     updateWordCount();
@@ -304,7 +260,6 @@ function updateCurrentSheet() {
   sheet.updatedAt = new Date().toISOString();
   sheet.wordCount = countWords(elements.sheetEditor.textContent);
 
-  // Update "Currently Editing" in sidebar
   elements.currentEditingTitle.textContent = sheet.title;
 
   debouncedSave();
@@ -342,7 +297,6 @@ function updateWordCount() {
   const text = elements.sheetEditor.textContent;
   const words = countWords(text);
 
-  // Update status bar
   elements.statusWords.textContent = `Words: ${words}`;
 
   if (words >= 1000) {
@@ -569,6 +523,74 @@ function applySuggestionToSheet(text) {
 }
 
 // ===================================================================
+// Help Modes
+// ===================================================================
+
+const helpModeMessages = {
+  'get-started': 'Let\'s get started. What\'s the story you want to tell? Just give me a sentence or a feeling — I\'ll help you find the thread.',
+  'make-heading': 'What\'s this piece about? Give me the theme or topic and I\'ll suggest a title.',
+  'research': 'What topic do you need to explore? I can help you gather context and background for your writing.',
+  'guided': 'I\'ll walk you through it step by step. First — who is this story about? Give me a name (real or made up).',
+  'stories': 'Let\'s weave your sheets together. Which sheets should I look at, and what\'s the bigger story you\'re building?'
+};
+
+function initHelpModes() {
+  elements.helpModeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Toggle active state
+      elements.helpModeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const mode = btn.dataset.mode;
+      const message = helpModeMessages[mode];
+      if (message) {
+        addPartnerMessage(message, 'system');
+      }
+    });
+  });
+}
+
+// ===================================================================
+// Live Link
+// ===================================================================
+
+function initLiveLink() {
+  // Open guardrails modal
+  elements.liveLinkBtn.addEventListener('click', () => {
+    if (state.liveLinkActive) {
+      // Deactivate
+      state.liveLinkActive = false;
+      elements.liveLinkBtn.classList.remove('active');
+      addPartnerMessage('Live Link disconnected.', 'system');
+      return;
+    }
+
+    // Show guardrails
+    elements.liveLinkModal.classList.remove('hidden');
+    elements.guardrailsAcceptCheck.checked = false;
+    elements.initializeLiveLinkBtn.disabled = true;
+  });
+
+  // Checkbox enables Initialize button
+  elements.guardrailsAcceptCheck.addEventListener('change', () => {
+    elements.initializeLiveLinkBtn.disabled = !elements.guardrailsAcceptCheck.checked;
+  });
+
+  // Initialize
+  elements.initializeLiveLinkBtn.addEventListener('click', () => {
+    elements.liveLinkModal.classList.add('hidden');
+    state.liveLinkActive = true;
+    elements.liveLinkBtn.classList.add('active');
+    addPartnerMessage('Live Link initialized. Wrapp is listening.', 'system');
+  });
+
+  // Cancel
+  elements.cancelLiveLinkBtn.addEventListener('click', () => {
+    elements.liveLinkModal.classList.add('hidden');
+  });
+}
+
+// ===================================================================
 // Local Revise Tools
 // ===================================================================
 
@@ -597,10 +619,24 @@ function washText() {
   }
 
   const suggestion = `Consider adding paragraph breaks:\n\n` +
-    `• After: "${sentences[2]?.trim().substring(0, 50)}..."\n` +
-    (sentences[5] ? `• After: "${sentences[5]?.trim().substring(0, 50)}..."\n` : '');
+    `- After: "${sentences[2]?.trim().substring(0, 50)}..."\n` +
+    (sentences[5] ? `- After: "${sentences[5]?.trim().substring(0, 50)}..."\n` : '');
 
   addPartnerMessage(suggestion, 'system');
+}
+
+// ===================================================================
+// Theme
+// ===================================================================
+
+function loadTheme() {
+  const saved = localStorage.getItem('forgeProfile');
+  if (saved) {
+    const profile = JSON.parse(saved);
+    if (profile.theme) {
+      document.documentElement.setAttribute('data-theme', profile.theme);
+    }
+  }
 }
 
 // ===================================================================
@@ -610,6 +646,26 @@ function washText() {
 function initEventListeners() {
   // Navigator
   elements.newSheetBtn.addEventListener('click', createNewSheet);
+
+  // Home button resets to most recent sheet
+  elements.homeBtn.addEventListener('click', () => {
+    if (state.sheets.length > 0) {
+      const mostRecent = [...state.sheets].sort((a, b) =>
+        new Date(b.updatedAt) - new Date(a.updatedAt)
+      )[0];
+      loadSheet(mostRecent.id);
+    }
+    elements.sheetEditor.focus();
+  });
+
+  // Save to Vault
+  elements.saveToVaultBtn.addEventListener('click', async () => {
+    const sheet = getCurrentSheet();
+    if (sheet) {
+      await saveSheetToDB(sheet);
+      addPartnerMessage('Sheet saved to Vault.', 'system');
+    }
+  });
 
   // Sheet Editor
   elements.sheetTitle.addEventListener('input', updateCurrentSheet);
@@ -640,20 +696,6 @@ function initEventListeners() {
     elements.wordWarningModal.classList.add('hidden');
     await createNewSheet();
   });
-
-  // Calibrate Clone button
-  elements.calibrateCloneBtn.addEventListener('click', () => {
-    addPartnerMessage('Voice clone calibration started. Read the following passage aloud...', 'system');
-  });
-
-  // Apply Transformation button
-  elements.applyTransformBtn.addEventListener('click', () => {
-    const { gender, tone, accent } = state.calibration;
-    addPartnerMessage(
-      `Transformation applied — Gender: ${gender}, Tone: ${tone}, Accent: ${accent}`,
-      'system'
-    );
-  });
 }
 
 // ===================================================================
@@ -662,6 +704,8 @@ function initEventListeners() {
 
 async function init() {
   try {
+    loadTheme();
+
     await initDB();
     console.log('Database initialized');
 
@@ -684,10 +728,11 @@ async function init() {
     renderSheetList();
     initPanelResizing();
     initWrapHub();
-    initCalibrationToggles();
+    initHelpModes();
+    initLiveLink();
     initEventListeners();
 
-    console.log('Captive Audience is ready');
+    console.log('The Sovereign Forge is ready');
 
   } catch (error) {
     console.error('Initialization error:', error);
