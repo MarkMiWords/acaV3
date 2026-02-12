@@ -154,6 +154,11 @@ const elements = {
   importAppendBtn: document.getElementById('import-append-btn'),
   importReplaceBtn: document.getElementById('import-replace-btn'),
   importCancelBtn: document.getElementById('import-cancel-btn'),
+  importFileZone: document.getElementById('import-file-zone'),
+  importFileInput: document.getElementById('import-file-input'),
+  importFileName: document.getElementById('import-file-name'),
+  importFileNameText: document.getElementById('import-file-name-text'),
+  importFileClear: document.getElementById('import-file-clear'),
 
   // Panels & Resizers
   workspace: document.querySelector('.forge-workspace'),
@@ -602,55 +607,181 @@ function initLiveLink() {
 // Import Text
 // ===================================================================
 
+// Holds parsed HTML from a file upload (cleared when modal resets)
+let importedFileHtml = '';
+
 function initImportText() {
   // Open modal
   elements.importTextBtn.addEventListener('click', () => {
     closeAllDropdowns();
-    elements.importTextArea.value = '';
+    resetImportModal();
     elements.importTextModal.classList.remove('hidden');
-    elements.importTextArea.focus();
   });
 
-  // Append — adds imported text after existing content
+  // File input change
+  elements.importFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleImportFile(file);
+  });
+
+  // Drag and drop
+  elements.importFileZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    elements.importFileZone.classList.add('dragover');
+  });
+
+  elements.importFileZone.addEventListener('dragleave', () => {
+    elements.importFileZone.classList.remove('dragover');
+  });
+
+  elements.importFileZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    elements.importFileZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) handleImportFile(file);
+  });
+
+  // Clear file
+  elements.importFileClear.addEventListener('click', () => {
+    importedFileHtml = '';
+    elements.importFileInput.value = '';
+    elements.importFileName.classList.add('hidden');
+  });
+
+  // Append
   elements.importAppendBtn.addEventListener('click', () => {
-    const text = elements.importTextArea.value.trim();
-    if (!text) return;
+    const html = getImportHtml();
+    if (!html) return;
 
-    // Convert plain text line breaks to paragraphs
-    const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-    const html = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
-
-    // Append to existing content
     elements.sheetEditor.innerHTML += html;
-
-    updateCurrentSheet();
-    updateWordCount();
-    elements.importTextModal.classList.add('hidden');
-
-    addPartnerMessage(`Imported ${countWords(text)} words — appended to sheet.`, 'system');
+    finishImport('appended');
   });
 
-  // Replace — clears sheet and imports
+  // Replace
   elements.importReplaceBtn.addEventListener('click', () => {
-    const text = elements.importTextArea.value.trim();
-    if (!text) return;
-
-    const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-    const html = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+    const html = getImportHtml();
+    if (!html) return;
 
     elements.sheetEditor.innerHTML = html;
-
-    updateCurrentSheet();
-    updateWordCount();
-    elements.importTextModal.classList.add('hidden');
-
-    addPartnerMessage(`Imported ${countWords(text)} words — replaced sheet content.`, 'system');
+    finishImport('replaced');
   });
 
   // Cancel
   elements.importCancelBtn.addEventListener('click', () => {
     elements.importTextModal.classList.add('hidden');
   });
+}
+
+function resetImportModal() {
+  importedFileHtml = '';
+  elements.importTextArea.value = '';
+  elements.importFileInput.value = '';
+  elements.importFileName.classList.add('hidden');
+}
+
+/**
+ * Returns HTML content from either the uploaded file or the paste area.
+ * File takes priority if present.
+ */
+function getImportHtml() {
+  // File content takes priority
+  if (importedFileHtml) return importedFileHtml;
+
+  // Fall back to paste area
+  const text = elements.importTextArea.value.trim();
+  if (!text) return '';
+
+  // Convert plain text to paragraphs
+  const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+}
+
+function finishImport(action) {
+  updateCurrentSheet();
+  updateWordCount();
+  elements.importTextModal.classList.add('hidden');
+
+  const words = countWords(elements.sheetEditor.textContent);
+  addPartnerMessage(`Import complete — ${action} sheet content. Sheet now has ${words} words.`, 'system');
+}
+
+/**
+ * Handle an uploaded file: .txt, .docx, .html/.htm
+ */
+async function handleImportFile(file) {
+  const name = file.name.toLowerCase();
+  const ext = name.split('.').pop();
+
+  // Show file name
+  elements.importFileNameText.textContent = file.name;
+  elements.importFileName.classList.remove('hidden');
+
+  try {
+    if (ext === 'txt') {
+      const text = await file.text();
+      const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+      importedFileHtml = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+
+    } else if (ext === 'docx' || ext === 'doc') {
+      if (typeof mammoth === 'undefined') {
+        addPartnerMessage('Word document support is loading. Please try again in a moment.', 'system');
+        return;
+      }
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.convertToHtml({ arrayBuffer });
+
+      if (result.messages.length > 0) {
+        console.warn('Mammoth warnings:', result.messages);
+      }
+
+      importedFileHtml = cleanImportedHtml(result.value);
+
+    } else if (ext === 'html' || ext === 'htm') {
+      const text = await file.text();
+      importedFileHtml = cleanImportedHtml(text);
+
+    } else {
+      addPartnerMessage(`Unsupported file type: .${ext}. Use .txt, .docx, or .html.`, 'system');
+      elements.importFileName.classList.add('hidden');
+      return;
+    }
+
+    // Preview word count
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = importedFileHtml;
+    const words = countWords(tempDiv.textContent);
+    addPartnerMessage(`File loaded: "${file.name}" — ${words} words ready to import.`, 'system');
+
+  } catch (error) {
+    console.error('File import error:', error);
+    addPartnerMessage(`Error reading file: ${error.message}`, 'system');
+    importedFileHtml = '';
+    elements.importFileName.classList.add('hidden');
+  }
+}
+
+/**
+ * Clean imported HTML — strip scripts, styles, and heavy formatting.
+ * Keep paragraphs, headings, lists, line breaks, bold, italic.
+ */
+function cleanImportedHtml(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // Remove scripts, styles, meta tags
+  doc.querySelectorAll('script, style, meta, link, head').forEach(el => el.remove());
+
+  // Get body content (or full content if no body)
+  const body = doc.body || doc.documentElement;
+
+  // Strip all attributes except basic ones, and remove inline styles
+  body.querySelectorAll('*').forEach(el => {
+    // Remove all attributes
+    const attrs = [...el.attributes];
+    attrs.forEach(attr => el.removeAttribute(attr.name));
+  });
+
+  return body.innerHTML.trim();
 }
 
 // ===================================================================
