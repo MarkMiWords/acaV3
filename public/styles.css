@@ -1097,6 +1097,52 @@ html, body {
   color: var(--text-muted);
 }
 
+/* Import Text Modal */
+.modal-import-text {
+  max-width: 600px;
+}
+
+.modal-import-text h3 {
+  color: var(--text-primary);
+}
+
+.import-text-area {
+  width: 100%;
+  padding: 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-writing);
+  font-size: 1rem;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 16px;
+  min-height: 200px;
+}
+
+.import-text-area:focus {
+  border-color: var(--accent-primary);
+}
+
+.import-text-area::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.import-text-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.import-text-actions .primary-btn,
+.import-text-actions .secondary-btn {
+  width: auto;
+  flex: none;
+}
+
 /* ===================================================================
    Vault Page
    =================================================================== */

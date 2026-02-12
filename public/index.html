@@ -273,6 +273,25 @@
     </div>
   </div>
 
+  <!-- Import Text Modal -->
+  <div id="import-text-modal" class="modal hidden">
+    <div class="modal-content modal-import-text">
+      <h3>Import Text</h3>
+      <p>Paste your text below. It will be added to the current sheet.</p>
+      <textarea
+        id="import-text-area"
+        class="import-text-area"
+        placeholder="Paste or type your text here..."
+        rows="12"
+      ></textarea>
+      <div class="import-text-actions">
+        <button id="import-append-btn" class="primary-btn">Append to Sheet</button>
+        <button id="import-replace-btn" class="secondary-btn">Replace Sheet</button>
+        <button id="import-cancel-btn" class="secondary-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/app.js"></script>
 </body>
 </html>

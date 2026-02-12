@@ -147,6 +147,14 @@ const elements = {
   initializeLiveLinkBtn: document.getElementById('initialize-live-link-btn'),
   cancelLiveLinkBtn: document.getElementById('cancel-live-link-btn'),
 
+  // Import Text Modal
+  importTextBtn: document.getElementById('import-text-btn'),
+  importTextModal: document.getElementById('import-text-modal'),
+  importTextArea: document.getElementById('import-text-area'),
+  importAppendBtn: document.getElementById('import-append-btn'),
+  importReplaceBtn: document.getElementById('import-replace-btn'),
+  importCancelBtn: document.getElementById('import-cancel-btn'),
+
   // Panels & Resizers
   workspace: document.querySelector('.forge-workspace'),
   resizers: document.querySelectorAll('.resizer')
@@ -591,6 +599,61 @@ function initLiveLink() {
 }
 
 // ===================================================================
+// Import Text
+// ===================================================================
+
+function initImportText() {
+  // Open modal
+  elements.importTextBtn.addEventListener('click', () => {
+    closeAllDropdowns();
+    elements.importTextArea.value = '';
+    elements.importTextModal.classList.remove('hidden');
+    elements.importTextArea.focus();
+  });
+
+  // Append — adds imported text after existing content
+  elements.importAppendBtn.addEventListener('click', () => {
+    const text = elements.importTextArea.value.trim();
+    if (!text) return;
+
+    // Convert plain text line breaks to paragraphs
+    const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+    const html = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+
+    // Append to existing content
+    elements.sheetEditor.innerHTML += html;
+
+    updateCurrentSheet();
+    updateWordCount();
+    elements.importTextModal.classList.add('hidden');
+
+    addPartnerMessage(`Imported ${countWords(text)} words — appended to sheet.`, 'system');
+  });
+
+  // Replace — clears sheet and imports
+  elements.importReplaceBtn.addEventListener('click', () => {
+    const text = elements.importTextArea.value.trim();
+    if (!text) return;
+
+    const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+    const html = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+
+    elements.sheetEditor.innerHTML = html;
+
+    updateCurrentSheet();
+    updateWordCount();
+    elements.importTextModal.classList.add('hidden');
+
+    addPartnerMessage(`Imported ${countWords(text)} words — replaced sheet content.`, 'system');
+  });
+
+  // Cancel
+  elements.importCancelBtn.addEventListener('click', () => {
+    elements.importTextModal.classList.add('hidden');
+  });
+}
+
+// ===================================================================
 // Local Revise Tools
 // ===================================================================
 
@@ -737,6 +800,7 @@ async function init() {
     initWrapHub();
     initHelpModes();
     initLiveLink();
+    initImportText();
     initEventListeners();
 
     console.log('The Sovereign Forge is ready');
