@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Vault — The Sovereign Forge</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="vault-page">
+
+    <!-- Vault Header -->
+    <div class="vault-header">
+      <div class="vault-header-top">
+        <a href="/" class="vault-back-link">&larr; Back to Forge</a>
+        <a href="/profile.html" class="vault-profile-link">WRAP Profile</a>
+      </div>
+      <h1>The Vault</h1>
+      <p class="vault-subtitle">Every sheet you've written. Stored locally. Sovereign.</p>
+    </div>
+
+    <!-- Vault Toolbar -->
+    <div class="vault-toolbar">
+      <div class="vault-search-container">
+        <input type="text" id="vault-search" class="vault-search-input" placeholder="Search sheets by title or content...">
+      </div>
+      <div class="vault-sort-container">
+        <label class="vault-sort-label">Sort:</label>
+        <select id="vault-sort" class="vault-sort-select">
+          <option value="updated-desc">Last Updated</option>
+          <option value="updated-asc">Oldest Updated</option>
+          <option value="created-desc">Newest Created</option>
+          <option value="created-asc">Oldest Created</option>
+          <option value="title-asc">Title A–Z</option>
+          <option value="title-desc">Title Z–A</option>
+          <option value="words-desc">Most Words</option>
+          <option value="words-asc">Fewest Words</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Vault Stats -->
+    <div class="vault-stats">
+      <span class="vault-stat" id="vault-total-sheets">0 sheets</span>
+      <span class="vault-stat-divider">|</span>
+      <span class="vault-stat" id="vault-total-words">0 total words</span>
+    </div>
+
+    <!-- Vault Grid -->
+    <div class="vault-content">
+      <div class="vault-grid" id="vault-grid">
+        <!-- Sheet cards inserted dynamically -->
+      </div>
+
+      <div class="vault-empty hidden" id="vault-empty">
+        <p>No sheets in the vault yet.</p>
+        <a href="/" class="vault-empty-link">Open The Forge and start writing.</a>
+      </div>
+
+      <div class="vault-no-results hidden" id="vault-no-results">
+        <p>No sheets match your search.</p>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="vault-delete-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Delete Sheet</h3>
+        <p>Are you sure you want to delete "<span id="delete-sheet-title"></span>"? This cannot be undone.</p>
+        <button id="confirm-delete-btn" class="primary-btn vault-btn-danger">Delete Permanently</button>
+        <button id="cancel-delete-btn" class="secondary-btn">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Vault Footer -->
+    <div class="vault-footer">
+      <span class="vault-footer-text">The Sovereign Forge VT.5</span>
+    </div>
+
+  </div>
+
+  <script src="/vault.js"></script>
+</body>
+</html>

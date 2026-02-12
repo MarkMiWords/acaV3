@@ -17,10 +17,6 @@
           "functionId": "api",
           "region": "asia-southeast1"
         }
-      },
-      {
-        "source": "**",
-        "destination": "/index.html"
       }
     ]
   },

@@ -712,9 +712,16 @@ async function init() {
     state.sheets = await getAllSheetsFromDB();
     console.log(`Loaded ${state.sheets.length} sheets`);
 
+    // Check for ?sheet= URL param (from Vault "Open in Forge")
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedSheet = urlParams.get('sheet');
     const lastOpened = localStorage.getItem('lastOpenedSheet');
 
-    if (state.sheets.length === 0) {
+    if (requestedSheet && state.sheets.some(s => s.id === requestedSheet)) {
+      await loadSheet(requestedSheet);
+      // Clean URL without reload
+      window.history.replaceState({}, '', '/');
+    } else if (state.sheets.length === 0) {
       await createNewSheet();
     } else if (lastOpened && state.sheets.some(s => s.id === lastOpened)) {
       await loadSheet(lastOpened);
