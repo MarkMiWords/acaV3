@@ -147,6 +147,11 @@ const elements = {
   initializeLiveLinkBtn: document.getElementById('initialize-live-link-btn'),
   cancelLiveLinkBtn: document.getElementById('cancel-live-link-btn'),
 
+  // Delete Sheet Modal
+  deleteSheetModal: document.getElementById('delete-sheet-modal'),
+  confirmDeleteSheetBtn: document.getElementById('confirm-delete-sheet-btn'),
+  cancelDeleteSheetBtn: document.getElementById('cancel-delete-sheet-btn'),
+
   // Import Text Modal
   importTextBtn: document.getElementById('import-text-btn'),
   importTextModal: document.getElementById('import-text-modal'),
@@ -358,16 +363,82 @@ function renderSheetList() {
     }
 
     li.innerHTML = `
-      <div class="sheet-list-item-title">${sheet.title}</div>
+      <div class="sheet-list-item-header">
+        <div class="sheet-list-item-title">${sheet.title}</div>
+        <button class="sheet-list-item-delete" title="Delete sheet">&times;</button>
+      </div>
       <div class="sheet-list-item-meta">
         <span>${sheet.wordCount || 0} words</span>
         <span>${formatDate(sheet.updatedAt)}</span>
       </div>
     `;
 
-    li.addEventListener('click', () => loadSheet(sheet.id));
+    // Click to load (but not on delete button)
+    li.addEventListener('click', (e) => {
+      if (e.target.closest('.sheet-list-item-delete')) return;
+      loadSheet(sheet.id);
+    });
+
+    // Delete button
+    li.querySelector('.sheet-list-item-delete').addEventListener('click', (e) => {
+      e.stopPropagation();
+      showDeleteSheetModal(sheet.id, sheet.title);
+    });
+
     elements.sheetList.appendChild(li);
   });
+}
+
+// ===================================================================
+// Delete Sheet
+// ===================================================================
+
+let deleteSheetTargetId = null;
+
+function showDeleteSheetModal(id, title) {
+  deleteSheetTargetId = id;
+  document.getElementById('delete-sheet-title-text').textContent = title || 'Untitled Sheet';
+  elements.deleteSheetModal.classList.remove('hidden');
+}
+
+function hideDeleteSheetModal() {
+  deleteSheetTargetId = null;
+  elements.deleteSheetModal.classList.add('hidden');
+}
+
+async function confirmDeleteSheet() {
+  if (!deleteSheetTargetId) return;
+
+  const id = deleteSheetTargetId;
+
+  try {
+    await deleteSheetFromDB(id);
+    state.sheets = state.sheets.filter(s => s.id !== id);
+
+    if (localStorage.getItem('lastOpenedSheet') === id) {
+      localStorage.removeItem('lastOpenedSheet');
+    }
+
+    // If we deleted the active sheet, load another or create new
+    if (state.currentSheetId === id) {
+      if (state.sheets.length > 0) {
+        const mostRecent = [...state.sheets].sort((a, b) =>
+          new Date(b.updatedAt) - new Date(a.updatedAt)
+        )[0];
+        await loadSheet(mostRecent.id);
+      } else {
+        await createNewSheet();
+      }
+    }
+
+    renderSheetList();
+    hideDeleteSheetModal();
+    addPartnerMessage('Sheet deleted.', 'system');
+
+  } catch (error) {
+    console.error('Delete sheet error:', error);
+    addPartnerMessage('Error deleting sheet.', 'system');
+  }
 }
 
 function formatDate(isoString) {
@@ -909,6 +980,10 @@ function initEventListeners() {
     elements.wordWarningModal.classList.add('hidden');
     await createNewSheet();
   });
+
+  // Delete Sheet Modal
+  elements.confirmDeleteSheetBtn.addEventListener('click', confirmDeleteSheet);
+  elements.cancelDeleteSheetBtn.addEventListener('click', hideDeleteSheetModal);
 }
 
 // ===================================================================

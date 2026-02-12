@@ -286,6 +286,13 @@ html, body {
   border-left-color: var(--accent-primary);
 }
 
+.sheet-list-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+}
+
 .sheet-list-item-title {
   font-weight: 500;
   color: var(--text-primary);
@@ -294,6 +301,28 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+}
+
+.sheet-list-item-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  opacity: 0;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.sheet-list-item:hover .sheet-list-item-delete {
+  opacity: 1;
+}
+
+.sheet-list-item-delete:hover {
+  color: var(--danger);
 }
 
 .sheet-list-item-meta {
