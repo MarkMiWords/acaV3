@@ -4,7 +4,7 @@
  */
 
 import { onRequest } from 'firebase-functions/v2/https';
-import express, { Router } from 'express';
+import express from 'express';
 import cors from 'cors';
 import { checkText, safeResponseFor } from './guardrails';
 import { GoogleGenerativeAI, Content } from '@google/generative-ai';
@@ -80,7 +80,7 @@ RULES:
 // Route Definitions
 // ===================================================================
 
-const apiRouter = Router();
+const apiRouter = express.Router();
 
 /**
  * Health check endpoint
