@@ -39,6 +39,7 @@ function initDB() {
 
 function saveSheetToDB(sheet) {
   return new Promise((resolve, reject) => {
+    if (!db) return reject(new Error('Database not initialized'));
     const transaction = db.transaction([STORE_NAME], 'readwrite');
     const objectStore = transaction.objectStore(STORE_NAME);
     const request = objectStore.put(sheet);
@@ -50,6 +51,7 @@ function saveSheetToDB(sheet) {
 
 function getAllSheetsFromDB() {
   return new Promise((resolve, reject) => {
+    if (!db) return reject(new Error('Database not initialized'));
     const transaction = db.transaction([STORE_NAME], 'readonly');
     const objectStore = transaction.objectStore(STORE_NAME);
     const request = objectStore.getAll();
@@ -61,6 +63,7 @@ function getAllSheetsFromDB() {
 
 function getSheetFromDB(id) {
   return new Promise((resolve, reject) => {
+    if (!db) return reject(new Error('Database not initialized'));
     const transaction = db.transaction([STORE_NAME], 'readonly');
     const objectStore = transaction.objectStore(STORE_NAME);
     const request = objectStore.get(id);
@@ -72,6 +75,7 @@ function getSheetFromDB(id) {
 
 function deleteSheetFromDB(id) {
   return new Promise((resolve, reject) => {
+    if (!db) return reject(new Error('Database not initialized'));
     const transaction = db.transaction([STORE_NAME], 'readwrite');
     const objectStore = transaction.objectStore(STORE_NAME);
     const request = objectStore.delete(id);
@@ -95,7 +99,8 @@ const state = {
   panelWidths: {
     left: 220,
     right: 320
-  }
+  },
+  isListening: false
 };
 
 // ===================================================================
@@ -131,6 +136,7 @@ const elements = {
   partnerMessages: document.getElementById('partner-messages'),
   partnerInput: document.getElementById('partner-input'),
   partnerSendBtn: document.getElementById('partner-send-btn'),
+  partnerMicBtn: document.getElementById('partner-mic-btn'),
 
   // Status Bar
   statusWords: document.getElementById('status-words'),
@@ -172,13 +178,22 @@ const elements = {
   resizers: document.querySelectorAll('.resizer')
 };
 
+// Helper to add event listener only if element exists
+function addSafeListener(el, type, handler) {
+  if (el) {
+    el.addEventListener(type, handler);
+  }
+}
+
 // ===================================================================
 // WRAP Hub Dropdowns
 // ===================================================================
 
 function initWrapHub() {
+  if (!elements.wrapHubBtns) return;
+  
   elements.wrapHubBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    addSafeListener(btn, 'click', (e) => {
       e.stopPropagation();
       const wrapName = btn.dataset.wrap;
 
@@ -206,16 +221,22 @@ function initWrapHub() {
   });
 
   // Prevent dropdown content clicks from closing the dropdown
-  elements.wrapDropdowns.forEach(dropdown => {
-    dropdown.addEventListener('click', (e) => {
-      e.stopPropagation();
+  if (elements.wrapDropdowns) {
+    elements.wrapDropdowns.forEach(dropdown => {
+      addSafeListener(dropdown, 'click', (e) => {
+        e.stopPropagation();
+      });
     });
-  });
+  }
 }
 
 function closeAllDropdowns() {
-  elements.wrapDropdowns.forEach(d => d.classList.remove('open'));
-  elements.wrapHubBtns.forEach(b => b.classList.remove('open'));
+  if (elements.wrapDropdowns) {
+    elements.wrapDropdowns.forEach(d => d.classList.remove('open'));
+  }
+  if (elements.wrapHubBtns) {
+    elements.wrapHubBtns.forEach(b => b.classList.remove('open'));
+  }
 }
 
 // ===================================================================
@@ -240,6 +261,7 @@ async function createNewSheet() {
     renderSheetList();
   } catch (error) {
     console.error('Error creating new sheet:', error);
+    addPartnerMessage(`Failed to create new sheet: ${error.message}`, 'system');
   }
 }
 
@@ -252,11 +274,13 @@ async function loadSheet(sheetId) {
     }
 
     state.currentSheetId = sheetId;
-    elements.sheetTitle.value = sheet.title;
-    elements.sheetEditor.innerHTML = sheet.content;
+    if (elements.sheetTitle) elements.sheetTitle.value = sheet.title;
+    if (elements.sheetEditor) elements.sheetEditor.innerHTML = sheet.content;
     state.lastSavedContent = sheet.content;
 
-    elements.currentEditingTitle.textContent = sheet.title || 'Untitled Sheet';
+    if (elements.currentEditingTitle) {
+      elements.currentEditingTitle.textContent = sheet.title || 'Untitled Sheet';
+    }
 
     // Reset partner conversation for new sheet context
     state.partnerHistory = [];
@@ -267,6 +291,7 @@ async function loadSheet(sheetId) {
     localStorage.setItem('lastOpenedSheet', sheetId);
   } catch (error) {
     console.error('Error loading sheet:', error);
+    addPartnerMessage(`Error loading sheet: ${error.message}`, 'system');
   }
 }
 
@@ -278,12 +303,19 @@ function updateCurrentSheet() {
   const sheet = getCurrentSheet();
   if (!sheet) return;
 
-  sheet.title = elements.sheetTitle.value || 'Untitled Sheet';
-  sheet.content = elements.sheetEditor.innerHTML;
+  if (elements.sheetTitle) {
+    sheet.title = elements.sheetTitle.value || 'Untitled Sheet';
+  }
+  if (elements.sheetEditor) {
+    sheet.content = elements.sheetEditor.innerHTML;
+    sheet.wordCount = countWords(elements.sheetEditor.textContent);
+  }
+  
   sheet.updatedAt = new Date().toISOString();
-  sheet.wordCount = countWords(elements.sheetEditor.textContent);
 
-  elements.currentEditingTitle.textContent = sheet.title;
+  if (elements.currentEditingTitle) {
+    elements.currentEditingTitle.textContent = sheet.title;
+  }
 
   debouncedSave();
 }
@@ -312,11 +344,14 @@ function debouncedSave() {
 // ===================================================================
 
 function countWords(text) {
+  if (!text) return 0;
   const cleaned = text.trim().replace(/\s+/g, ' ');
   return cleaned.length === 0 ? 0 : cleaned.split(' ').length;
 }
 
 function updateWordCount() {
+  if (!elements.sheetEditor || !elements.statusWords) return;
+  
   const text = elements.sheetEditor.textContent;
   const words = countWords(text);
 
@@ -334,6 +369,7 @@ function updateWordCount() {
 }
 
 function showWordWarning() {
+  if (!elements.sheetEditor || !elements.wordWarningModal || !elements.warningWordCount) return;
   const words = countWords(elements.sheetEditor.textContent);
   elements.warningWordCount.textContent = words;
   elements.wordWarningModal.classList.remove('hidden');
@@ -352,6 +388,7 @@ async function handleWordLimit() {
 // ===================================================================
 
 function renderSheetList() {
+  if (!elements.sheetList) return;
   elements.sheetList.innerHTML = '';
 
   if (state.sheets.length === 0) return;
@@ -385,10 +422,13 @@ function renderSheetList() {
     });
 
     // Delete button
-    li.querySelector('.sheet-list-item-delete').addEventListener('click', (e) => {
-      e.stopPropagation();
-      showDeleteSheetModal(sheet.id, sheet.title);
-    });
+    const deleteBtn = li.querySelector('.sheet-list-item-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showDeleteSheetModal(sheet.id, sheet.title);
+      });
+    }
 
     elements.sheetList.appendChild(li);
   });
@@ -402,13 +442,14 @@ let deleteSheetTargetId = null;
 
 function showDeleteSheetModal(id, title) {
   deleteSheetTargetId = id;
-  document.getElementById('delete-sheet-title-text').textContent = title || 'Untitled Sheet';
-  elements.deleteSheetModal.classList.remove('hidden');
+  const titleText = document.getElementById('delete-sheet-title-text');
+  if (titleText) titleText.textContent = title || 'Untitled Sheet';
+  if (elements.deleteSheetModal) elements.deleteSheetModal.classList.remove('hidden');
 }
 
 function hideDeleteSheetModal() {
   deleteSheetTargetId = null;
-  elements.deleteSheetModal.classList.add('hidden');
+  if (elements.deleteSheetModal) elements.deleteSheetModal.classList.add('hidden');
 }
 
 async function confirmDeleteSheet() {
@@ -442,7 +483,7 @@ async function confirmDeleteSheet() {
 
   } catch (error) {
     console.error('Delete sheet error:', error);
-    addPartnerMessage('Error deleting sheet.', 'system');
+    addPartnerMessage(`Error deleting sheet: ${error.message}`, 'system');
   }
 }
 
@@ -470,11 +511,13 @@ function initPanelResizing() {
     applyPanelWidths();
   }
 
+  if (!elements.resizers) return;
+  
   elements.resizers.forEach(resizer => {
     let startX, startWidth;
     const isLeftResizer = resizer.dataset.resizer === 'left';
 
-    resizer.addEventListener('mousedown', (e) => {
+    addSafeListener(resizer, 'mousedown', (e) => {
       startX = e.clientX;
       startWidth = isLeftResizer ? state.panelWidths.left : state.panelWidths.right;
 
@@ -510,8 +553,10 @@ function initPanelResizing() {
 }
 
 function applyPanelWidths() {
-  elements.workspace.style.gridTemplateColumns =
-    `${state.panelWidths.left}px var(--resizer-width) 1fr var(--resizer-width) ${state.panelWidths.right}px`;
+  if (elements.workspace) {
+    elements.workspace.style.gridTemplateColumns =
+      `${state.panelWidths.left}px var(--resizer-width) 1fr var(--resizer-width) ${state.panelWidths.right}px`;
+  }
 }
 
 // ===================================================================
@@ -519,6 +564,8 @@ function applyPanelWidths() {
 // ===================================================================
 
 function addPartnerMessage(content, type = 'assistant') {
+  if (!elements.partnerMessages) return;
+  
   const messageDiv = document.createElement('div');
   messageDiv.className = `partner-message ${type}`;
 
@@ -530,9 +577,11 @@ function addPartnerMessage(content, type = 'assistant') {
 
   elements.partnerMessages.appendChild(messageDiv);
   elements.partnerMessages.scrollTop = elements.partnerMessages.scrollHeight;
+  return messageDiv;
 }
 
 function removeThinkingIndicator() {
+  if (!elements.partnerMessages) return;
   const messages = elements.partnerMessages.querySelectorAll('.partner-message');
   const lastMessage = messages[messages.length - 1];
   if (lastMessage && lastMessage.textContent === 'Thinking...') {
@@ -547,6 +596,7 @@ function escapeHtml(text) {
 }
 
 async function sendPartnerMessage() {
+  if (!elements.partnerInput) return;
   const message = elements.partnerInput.value.trim();
   if (!message) return;
 
@@ -564,14 +614,16 @@ async function sendPartnerMessage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message,
-        sheetContent: elements.sheetEditor.textContent,
+        sheetContent: elements.sheetEditor ? elements.sheetEditor.textContent : '',
         history: state.partnerHistory.slice(0, -1)
       })
     });
 
-    if (!response.ok) throw new Error('Partner request failed');
-
     const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Partner request failed');
+    }
 
     removeThinkingIndicator();
 
@@ -586,9 +638,12 @@ async function sendPartnerMessage() {
         <button class="apply-suggestion-btn">Apply to Sheet</button>
       `;
 
-      suggestionCard.querySelector('.apply-suggestion-btn').addEventListener('click', () => {
-        applySuggestionToSheet(data.suggestion);
-      });
+      const applyBtn = suggestionCard.querySelector('.apply-suggestion-btn');
+      if (applyBtn) {
+        applyBtn.addEventListener('click', () => {
+          applySuggestionToSheet(data.suggestion);
+        });
+      }
 
       const container = document.createElement('div');
       const responseP = document.createElement('p');
@@ -603,7 +658,7 @@ async function sendPartnerMessage() {
   } catch (error) {
     console.error('Partner error:', error);
     removeThinkingIndicator();
-    addPartnerMessage('Sorry, I encountered an error. Please try again.', 'system');
+    addPartnerMessage(`Partner Error: ${error.message}`, 'system');
 
     // Remove the failed user message from history
     state.partnerHistory.pop();
@@ -611,19 +666,127 @@ async function sendPartnerMessage() {
 }
 
 function applySuggestionToSheet(text) {
+  if (!elements.sheetEditor) return;
+  
+  elements.sheetEditor.focus();
   const selection = window.getSelection();
-  const range = selection.getRangeAt(0);
+  if (selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
+    const textNode = document.createTextNode(' ' + text + ' ');
+    range.insertNode(textNode);
 
-  const textNode = document.createTextNode(' ' + text + ' ');
-  range.insertNode(textNode);
-
-  range.setStartAfter(textNode);
-  range.setEndAfter(textNode);
-  selection.removeAllRanges();
-  selection.addRange(range);
+    range.setStartAfter(textNode);
+    range.setEndAfter(textNode);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  } else {
+    // Just append if no selection
+    elements.sheetEditor.innerHTML += ' ' + text + ' ';
+  }
 
   updateCurrentSheet();
   updateWordCount();
+}
+
+// ===================================================================
+// Voice Input (Speech to Text)
+// ===================================================================
+
+let recognition = null;
+let finalTranscript = ''; 
+let recognitionStartTime = 0;
+const MAX_LISTEN_TIME = 60000; // 1 minute safety limit
+
+function initVoiceInput() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    if (elements.partnerMicBtn) elements.partnerMicBtn.style.display = 'none';
+    console.warn('Speech recognition not supported in this browser.');
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = true; 
+  recognition.interimResults = true; 
+  recognition.lang = 'en-AU';
+
+  recognition.onstart = () => {
+    state.isListening = true;
+    recognitionStartTime = Date.now();
+    if (elements.partnerMicBtn) elements.partnerMicBtn.classList.add('active');
+    console.log('Voice recognition started');
+  };
+
+  recognition.onend = () => {
+    console.log('Voice recognition ended');
+    
+    // If we are still "listening" but browser stopped, restart
+    const elapsed = Date.now() - recognitionStartTime;
+    if (state.isListening && elapsed < MAX_LISTEN_TIME) {
+        console.log('Attempting automatic restart...');
+        try {
+            recognition.start();
+            return;
+        } catch (e) {
+            console.warn('Silent restart failed, user interaction might be required.', e);
+        }
+    }
+    
+    // If we've reached the end of the intended session
+    if (!state.isListening || elapsed >= MAX_LISTEN_TIME) {
+        state.isListening = false;
+        if (elements.partnerMicBtn) elements.partnerMicBtn.classList.remove('active');
+    }
+  };
+
+  recognition.onresult = (event) => {
+    let interimTranscript = '';
+    let currentSessionFinal = '';
+    
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        currentSessionFinal += event.results[i][0].transcript + ' ';
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+
+    if (currentSessionFinal) {
+        finalTranscript += currentSessionFinal;
+    }
+
+    if (elements.partnerInput) {
+        const currentBase = elements.partnerInput.getAttribute('data-voice-base') || '';
+        elements.partnerInput.value = currentBase + (currentBase ? ' ' : '') + finalTranscript + interimTranscript;
+        elements.partnerInput.scrollTop = elements.partnerInput.scrollHeight;
+    }
+  };
+
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error:', event.error);
+    if (event.error === 'network') {
+        addPartnerMessage('Voice Error: Network issue.', 'system');
+        state.isListening = false;
+    }
+    // 'aborted' is normal when restarting
+  };
+
+  addSafeListener(elements.partnerMicBtn, 'click', () => {
+    if (state.isListening) {
+      state.isListening = false;
+      recognition.stop();
+    } else {
+      finalTranscript = ''; 
+      if (elements.partnerInput) {
+          elements.partnerInput.setAttribute('data-voice-base', elements.partnerInput.value);
+      }
+      try {
+          recognition.start();
+      } catch (e) {
+          console.error('Could not start recognition:', e);
+      }
+    }
+  });
 }
 
 // ===================================================================
@@ -639,8 +802,10 @@ const helpModeMessages = {
 };
 
 function initHelpModes() {
+  if (!elements.helpModeBtns) return;
+  
   elements.helpModeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
+    addSafeListener(btn, 'click', () => {
       // Toggle active state
       elements.helpModeBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -660,37 +825,45 @@ function initHelpModes() {
 
 function initLiveLink() {
   // Open guardrails modal
-  elements.liveLinkBtn.addEventListener('click', () => {
+  addSafeListener(elements.liveLinkBtn, 'click', () => {
     if (state.liveLinkActive) {
       // Deactivate
       state.liveLinkActive = false;
-      elements.liveLinkBtn.classList.remove('active');
+      if (elements.liveLinkBtn) elements.liveLinkBtn.classList.remove('active');
       addPartnerMessage('Live Link disconnected.', 'system');
       return;
     }
 
     // Show guardrails
-    elements.liveLinkModal.classList.remove('hidden');
-    elements.guardrailsAcceptCheck.checked = false;
-    elements.initializeLiveLinkBtn.disabled = true;
+    if (elements.liveLinkModal) {
+      elements.liveLinkModal.classList.remove('hidden');
+    }
+    if (elements.guardrailsAcceptCheck) {
+      elements.guardrailsAcceptCheck.checked = false;
+    }
+    if (elements.initializeLiveLinkBtn) {
+      elements.initializeLiveLinkBtn.disabled = true;
+    }
   });
 
   // Checkbox enables Initialize button
-  elements.guardrailsAcceptCheck.addEventListener('change', () => {
-    elements.initializeLiveLinkBtn.disabled = !elements.guardrailsAcceptCheck.checked;
+  addSafeListener(elements.guardrailsAcceptCheck, 'change', () => {
+    if (elements.initializeLiveLinkBtn) {
+      elements.initializeLiveLinkBtn.disabled = !elements.guardrailsAcceptCheck.checked;
+    }
   });
 
   // Initialize
-  elements.initializeLiveLinkBtn.addEventListener('click', () => {
-    elements.liveLinkModal.classList.add('hidden');
+  addSafeListener(elements.initializeLiveLinkBtn, 'click', () => {
+    if (elements.liveLinkModal) elements.liveLinkModal.classList.add('hidden');
     state.liveLinkActive = true;
-    elements.liveLinkBtn.classList.add('active');
+    if (elements.liveLinkBtn) elements.liveLinkBtn.classList.add('active');
     addPartnerMessage('Live Link initialized. Wrapp is listening.', 'system');
   });
 
   // Cancel
-  elements.cancelLiveLinkBtn.addEventListener('click', () => {
-    elements.liveLinkModal.classList.add('hidden');
+  addSafeListener(elements.cancelLiveLinkBtn, 'click', () => {
+    if (elements.liveLinkModal) elements.liveLinkModal.classList.add('hidden');
   });
 }
 
@@ -704,72 +877,78 @@ let importedFileTitle = '';
 
 function initImportText() {
   // Open modal
-  elements.importTextBtn.addEventListener('click', () => {
+  addSafeListener(elements.importTextBtn, 'click', () => {
     closeAllDropdowns();
     resetImportModal();
-    elements.importTextModal.classList.remove('hidden');
+    if (elements.importTextModal) elements.importTextModal.classList.remove('hidden');
   });
 
   // File input change
-  elements.importFileInput.addEventListener('change', (e) => {
+  addSafeListener(elements.importFileInput, 'change', (e) => {
     const file = e.target.files[0];
     if (file) handleImportFile(file);
   });
 
   // Drag and drop
-  elements.importFileZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    elements.importFileZone.classList.add('dragover');
-  });
+  if (elements.importFileZone) {
+    addSafeListener(elements.importFileZone, 'dragover', (e) => {
+      e.preventDefault();
+      elements.importFileZone.classList.add('dragover');
+    });
 
-  elements.importFileZone.addEventListener('dragleave', () => {
-    elements.importFileZone.classList.remove('dragover');
-  });
+    addSafeListener(elements.importFileZone, 'dragleave', () => {
+      elements.importFileZone.classList.remove('dragover');
+    });
 
-  elements.importFileZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    elements.importFileZone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) handleImportFile(file);
-  });
+    addSafeListener(elements.importFileZone, 'drop', (e) => {
+      e.preventDefault();
+      elements.importFileZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) handleImportFile(file);
+    });
+  }
 
   // Clear file
-  elements.importFileClear.addEventListener('click', () => {
+  addSafeListener(elements.importFileClear, 'click', () => {
     importedFileHtml = '';
-    elements.importFileInput.value = '';
-    elements.importFileName.classList.add('hidden');
+    if (elements.importFileInput) elements.importFileInput.value = '';
+    if (elements.importFileName) elements.importFileName.classList.add('hidden');
   });
 
   // Append
-  elements.importAppendBtn.addEventListener('click', () => {
+  addSafeListener(elements.importAppendBtn, 'click', () => {
     const html = getImportHtml();
     if (!html) return;
 
-    elements.sheetEditor.innerHTML += html;
+    if (elements.sheetEditor) {
+      elements.sheetEditor.innerHTML += html;
+    }
     finishImport('appended');
   });
 
   // Replace
-  elements.importReplaceBtn.addEventListener('click', () => {
+  addSafeListener(elements.importReplaceBtn, 'click', () => {
     const html = getImportHtml();
     if (!html) return;
 
-    elements.sheetEditor.innerHTML = html;
+    if (elements.sheetEditor) {
+      elements.sheetEditor.innerHTML = html;
+    }
     finishImport('replaced');
   });
 
   // Cancel
-  elements.importCancelBtn.addEventListener('click', () => {
-    elements.importTextModal.classList.add('hidden');
+  addSafeListener(elements.importCancelBtn, 'click', () => {
+    if (elements.importTextModal) elements.importTextModal.classList.add('hidden');
   });
 }
 
 function resetImportModal() {
   importedFileHtml = '';
   importedFileTitle = '';
-  elements.importTextArea.value = '';
-  elements.importFileInput.value = '';
-  elements.importFileName.classList.add('hidden');
+  if (elements.importTextArea) elements.importTextArea.value = '';
+  if (elements.importFileInput) elements.importFileInput.value = '';
+  if (elements.importFileName) elements.importFileName.classList.add('hidden');
 }
 
 /**
@@ -781,6 +960,7 @@ function getImportHtml() {
   if (importedFileHtml) return importedFileHtml;
 
   // Fall back to paste area
+  if (!elements.importTextArea) return '';
   const text = elements.importTextArea.value.trim();
   if (!text) return '';
 
@@ -792,15 +972,15 @@ function getImportHtml() {
 function finishImport(action) {
   // Apply extracted H1 as sheet title if present
   if (importedFileTitle) {
-    elements.sheetTitle.value = importedFileTitle;
-    elements.currentEditingTitle.textContent = importedFileTitle;
+    if (elements.sheetTitle) elements.sheetTitle.value = importedFileTitle;
+    if (elements.currentEditingTitle) elements.currentEditingTitle.textContent = importedFileTitle;
   }
 
   updateCurrentSheet();
   updateWordCount();
-  elements.importTextModal.classList.add('hidden');
+  if (elements.importTextModal) elements.importTextModal.classList.add('hidden');
 
-  const words = countWords(elements.sheetEditor.textContent);
+  const words = elements.sheetEditor ? countWords(elements.sheetEditor.textContent) : 0;
   let msg = `Import complete — ${action} sheet content. Sheet now has ${words} words.`;
   if (importedFileTitle) {
     msg += ` Title set to "${importedFileTitle}".`;
@@ -816,8 +996,8 @@ async function handleImportFile(file) {
   const ext = name.split('.').pop();
 
   // Show file name
-  elements.importFileNameText.textContent = file.name;
-  elements.importFileName.classList.remove('hidden');
+  if (elements.importFileNameText) elements.importFileNameText.textContent = file.name;
+  if (elements.importFileName) elements.importFileName.classList.remove('hidden');
 
   try {
     if (ext === 'txt') {
@@ -845,7 +1025,7 @@ async function handleImportFile(file) {
 
     } else {
       addPartnerMessage(`Unsupported file type: .${ext}. Use .txt, .docx, or .html.`, 'system');
-      elements.importFileName.classList.add('hidden');
+      if (elements.importFileName) elements.importFileName.classList.add('hidden');
       return;
     }
 
@@ -859,7 +1039,7 @@ async function handleImportFile(file) {
     console.error('File import error:', error);
     addPartnerMessage(`Error reading file: ${error.message}`, 'system');
     importedFileHtml = '';
-    elements.importFileName.classList.add('hidden');
+    if (elements.importFileName) elements.importFileName.classList.add('hidden');
   }
 }
 
@@ -899,6 +1079,7 @@ function cleanImportedHtml(html) {
 // ===================================================================
 
 function rinseText() {
+  if (!elements.sheetEditor) return;
   let text = elements.sheetEditor.innerHTML;
 
   text = text.replace(/&nbsp;+/g, ' ');
@@ -914,6 +1095,7 @@ function rinseText() {
 }
 
 async function washText() {
+  if (!elements.sheetEditor) return;
   const text = elements.sheetEditor.textContent;
   if (countWords(text) < 10) {
     addPartnerMessage('Write a bit more before washing — there\'s not enough to work with yet.', 'system');
@@ -924,6 +1106,7 @@ async function washText() {
 }
 
 async function scrubText() {
+  if (!elements.sheetEditor) return;
   const text = elements.sheetEditor.textContent;
   if (countWords(text) < 30) {
     addPartnerMessage('Write more before scrubbing — structural suggestions need a longer piece.', 'system');
@@ -942,14 +1125,16 @@ async function runReviseTool(tool) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sheetContent: elements.sheetEditor.textContent,
+        sheetContent: elements.sheetEditor ? elements.sheetEditor.textContent : '',
         tool
       })
     });
 
-    if (!response.ok) throw new Error('Revise request failed');
-
     const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Revise request failed');
+    }
 
     removeThinkingIndicator();
 
@@ -998,7 +1183,7 @@ async function runReviseTool(tool) {
   } catch (error) {
     console.error('Revise error:', error);
     removeThinkingIndicator();
-    addPartnerMessage(`Sorry, the ${tool} tool encountered an error. Please try again.`, 'system');
+    addPartnerMessage(`Revise Error: ${error.message}`, 'system');
   }
 }
 
@@ -1022,43 +1207,47 @@ function loadTheme() {
 
 function initEventListeners() {
   // Navigator
-  elements.newSheetBtn.addEventListener('click', createNewSheet);
+  addSafeListener(elements.newSheetBtn, 'click', createNewSheet);
 
   // Home button resets to most recent sheet
-  elements.homeBtn.addEventListener('click', () => {
+  addSafeListener(elements.homeBtn, 'click', () => {
     if (state.sheets.length > 0) {
       const mostRecent = [...state.sheets].sort((a, b) =>
         new Date(b.updatedAt) - new Date(a.updatedAt)
       )[0];
       loadSheet(mostRecent.id);
     }
-    elements.sheetEditor.focus();
+    if (elements.sheetEditor) elements.sheetEditor.focus();
   });
 
   // Save to Vault
-  elements.saveToVaultBtn.addEventListener('click', async () => {
+  addSafeListener(elements.saveToVaultBtn, 'click', async () => {
     const sheet = getCurrentSheet();
     if (sheet) {
-      await saveSheetToDB(sheet);
-      addPartnerMessage('Sheet saved to Vault.', 'system');
+      try {
+        await saveSheetToDB(sheet);
+        addPartnerMessage('Sheet saved to Vault.', 'system');
+      } catch (err) {
+        addPartnerMessage(`Failed to save: ${err.message}`, 'system');
+      }
     }
   });
 
   // Sheet Editor
-  elements.sheetTitle.addEventListener('input', updateCurrentSheet);
-  elements.sheetEditor.addEventListener('input', () => {
+  addSafeListener(elements.sheetTitle, 'input', updateCurrentSheet);
+  addSafeListener(elements.sheetEditor, 'input', () => {
     updateCurrentSheet();
     updateWordCount();
   });
 
   // Revise Tools
-  elements.rinseBtn.addEventListener('click', rinseText);
-  elements.washBtn.addEventListener('click', washText);
-  elements.scrubBtn.addEventListener('click', scrubText);
+  addSafeListener(elements.rinseBtn, 'click', rinseText);
+  addSafeListener(elements.washBtn, 'click', washText);
+  addSafeListener(elements.scrubBtn, 'click', scrubText);
 
   // WRAP Partner
-  elements.partnerSendBtn.addEventListener('click', sendPartnerMessage);
-  elements.partnerInput.addEventListener('keydown', (e) => {
+  addSafeListener(elements.partnerSendBtn, 'click', sendPartnerMessage);
+  addSafeListener(elements.partnerInput, 'keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendPartnerMessage();
@@ -1066,18 +1255,18 @@ function initEventListeners() {
   });
 
   // Word Warning Modal
-  elements.closeWarningBtn.addEventListener('click', () => {
-    elements.wordWarningModal.classList.add('hidden');
+  addSafeListener(elements.closeWarningBtn, 'click', () => {
+    if (elements.wordWarningModal) elements.wordWarningModal.classList.add('hidden');
   });
 
-  elements.newSheetFromWarningBtn.addEventListener('click', async () => {
-    elements.wordWarningModal.classList.add('hidden');
+  addSafeListener(elements.newSheetFromWarningBtn, 'click', async () => {
+    if (elements.wordWarningModal) elements.wordWarningModal.classList.add('hidden');
     await createNewSheet();
   });
 
   // Delete Sheet Modal
-  elements.confirmDeleteSheetBtn.addEventListener('click', confirmDeleteSheet);
-  elements.cancelDeleteSheetBtn.addEventListener('click', hideDeleteSheetModal);
+  addSafeListener(elements.confirmDeleteSheetBtn, 'click', confirmDeleteSheet);
+  addSafeListener(elements.cancelDeleteSheetBtn, 'click', hideDeleteSheetModal);
 }
 
 // ===================================================================
@@ -1085,6 +1274,7 @@ function initEventListeners() {
 // ===================================================================
 
 async function init() {
+  console.log('Initializing The Sovereign Forge...');
   try {
     loadTheme();
 
@@ -1108,10 +1298,14 @@ async function init() {
     } else if (lastOpened && state.sheets.some(s => s.id === lastOpened)) {
       await loadSheet(lastOpened);
     } else {
-      const mostRecent = state.sheets.sort((a, b) =>
+      const sorted = [...state.sheets].sort((a, b) =>
         new Date(b.updatedAt) - new Date(a.updatedAt)
-      )[0];
-      await loadSheet(mostRecent.id);
+      );
+      if (sorted.length > 0) {
+        await loadSheet(sorted[0].id);
+      } else {
+        await createNewSheet();
+      }
     }
 
     renderSheetList();
@@ -1121,12 +1315,13 @@ async function init() {
     initLiveLink();
     initImportText();
     initEventListeners();
+    initVoiceInput();
 
     console.log('The Sovereign Forge is ready');
 
   } catch (error) {
     console.error('Initialization error:', error);
-    addPartnerMessage(`Error initializing: ${error.message}`, 'system');
+    addPartnerMessage(`Initialization Error: ${error.message}`, 'system');
   }
 }
 

@@ -699,9 +699,14 @@ html, body {
   gap: 8px;
 }
 
+.partner-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 .partner-input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 10px 45px 10px 12px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -718,6 +723,39 @@ html, body {
 
 .partner-input::placeholder {
   color: var(--text-muted);
+}
+
+.mic-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 5px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.mic-btn:hover {
+  color: var(--accent-primary);
+  background: var(--bg-secondary);
+}
+
+.mic-btn.active {
+  color: var(--danger);
+  animation: micPulse 1.5s infinite;
+}
+
+@keyframes micPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
 }
 
 /* ===================================================================
@@ -1124,6 +1162,25 @@ html, body {
 .profile-footer-text {
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+/* Save Status Indicator */
+.save-status {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--success);
+  text-align: center;
+  font-weight: 500;
+}
+
+.save-status.hidden {
+  display: none;
+}
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* Import Text Modal */

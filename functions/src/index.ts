@@ -91,150 +91,101 @@ apiRouter.get('/health', (req, res) => {
 
 /**
  * Chat endpoint
- * Accepts user message and sheet content, applies guardrails, and returns response
  */
 apiRouter.post('/chat', async (req, res) => {
   try {
     const { sheetText, userMessage } = req.body;
 
-    // Validate input
     if (!userMessage || typeof userMessage !== 'string') {
-      res.status(400).json({ 
-        error: 'Missing or invalid userMessage' 
-      });
+      res.status(400).json({ error: 'Missing or invalid userMessage' });
       return;
     }
 
-    // Combine inputs for guardrail check
     const combinedText = `${sheetText || ''}\n${userMessage}`;
-
-    // Run guardrails check
     const guardrailResult = checkText(combinedText);
 
-    // If blocked, return safe response
     if (!guardrailResult.allowed) {
       res.status(400).json({
         error: 'Content blocked by safety filters',
         message: safeResponseFor(guardrailResult.category),
-        category: guardrailResult.category,
       });
       return;
     }
 
-    // Check for API key (will be needed for real AI calls)
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GOOGLE_GEMINI_KEY;
     if (!apiKey) {
-      // Gracefully handle missing key during development
-      res.json({
-        response: '[DEV MODE] AI response would go here. GEMINI_API_KEY not configured.',
-        metadata: {
-          sheetLength: sheetText?.length || 0,
-          messageLength: userMessage.length,
-        },
-      });
+      res.json({ response: '[DEV MODE] API Key missing.' });
       return;
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.0-flash",
+      systemInstruction: "You are a writing assistant in The Forge."
+    });
 
-    const prompt = `You are an expert in analyzing spreadsheet data. The user has provided the following data from a spreadsheet:\n\n${sheetText}\n\n The user has asked the following question:\n\n${userMessage}\n\n Provide a detailed answer to the user's question based on the provided data.`;
+    const userPrompt = `The user has provided their writing content:\n\n${sheetText}\n\n The user has asked the following:\n\n${userMessage}\n\n Provide a helpful response based on their writing.`;
 
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(userPrompt);
     const response = await result.response;
-    const text = response.text();
-
-    res.json({
-      response: text,
-      metadata: {
-        sheetLength: sheetText?.length || 0,
-        messageLength: userMessage.length,
-        guardrailsPassed: true,
-      },
-    });
-  } catch (error: unknown) {
-    console.error('Error in /chat endpoint:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.json({ response: response.text() });
+  } catch (error: any) {
+    console.error('Chat Error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
 /**
  * WRAP Partner endpoint
- * Guided writing assistant powered by Gemini
  */
 apiRouter.post('/partner', async (req, res) => {
   try {
     const { message, sheetContent, history } = req.body;
 
-    // Validate input
     if (!message || typeof message !== 'string') {
-      res.status(400).json({
-        error: 'Missing or invalid message'
-      });
+      res.status(400).json({ error: 'Missing or invalid message' });
       return;
     }
 
-    // Run guardrails check
     const guardrailResult = checkText(message);
     if (!guardrailResult.allowed) {
       res.status(400).json({
         error: 'Content blocked by safety filters',
         message: safeResponseFor(guardrailResult.category),
-        category: guardrailResult.category,
       });
       return;
     }
 
-    // Check for API key
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GOOGLE_GEMINI_KEY;
     if (!apiKey) {
-      res.json({
-        response: '[DEV MODE] WRAP Partner response would appear here. Set GEMINI_API_KEY to enable.',
-        suggestion: null,
-      });
+      res.json({ response: '[DEV MODE] API Key missing.' });
       return;
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.0-flash",
+      systemInstruction: WRAP_PARTNER_SYSTEM
+    });
 
-    // Build conversation history for multi-turn chat
     const chatHistory: Content[] = [];
     if (Array.isArray(history)) {
       for (const turn of history) {
         if (turn.role === 'user' || turn.role === 'model') {
-          chatHistory.push({
-            role: turn.role,
-            parts: [{ text: turn.text }],
-          });
+          chatHistory.push({ role: turn.role, parts: [{ text: turn.text }] });
         }
       }
     }
 
-    // Build the user message with sheet context
-    const sheetContext = sheetContent
-      ? `\n\n[CURRENT SHEET CONTENT]\n${sheetContent}\n[END SHEET CONTENT]\n\n`
-      : '';
+    const sheetContext = sheetContent ? `\n\n[CURRENT SHEET CONTENT]\n${sheetContent}\n` : '';
+    const userPrompt = `${sheetContext}\nAuthor says: ${message}\n\nRespond as the WRAP Partner. Include [SUGGESTION] followed by a one-sentence suggestion if applicable.`;
 
-    const userPrompt = `${sheetContext}Author says: ${message}
-
-Respond as the WRAP Partner. If you have a concrete writing suggestion the author could add to their sheet, include it in your response AND repeat it separately after the marker [SUGGESTION]. If you have no suggestion, do not include the marker.`;
-
-    const chat = model.startChat({
-      history: chatHistory,
-      systemInstruction: WRAP_PARTNER_SYSTEM,
-    });
-
+    const chat = model.startChat({ history: chatHistory });
     const result = await chat.sendMessage(userPrompt);
     const responseText = result.response.text();
 
-    // Parse out suggestion if present
     let response = responseText;
     let suggestion: string | null = null;
-
     const suggestionMarker = '[SUGGESTION]';
     const markerIndex = responseText.indexOf(suggestionMarker);
     if (markerIndex !== -1) {
@@ -242,126 +193,66 @@ Respond as the WRAP Partner. If you have a concrete writing suggestion the autho
       suggestion = responseText.substring(markerIndex + suggestionMarker.length).trim();
     }
 
-    res.json({
-      response,
-      suggestion,
-      metadata: {
-        messageLength: message.length,
-        sheetLength: sheetContent?.length || 0,
-        guardrailsPassed: true,
-      },
-    });
-  } catch (error: unknown) {
-    console.error('Error in /partner endpoint:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.json({ response, suggestion });
+  } catch (error: any) {
+    console.error('Partner Error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
 /**
  * Revise endpoint
- * AI-powered Wash (clarity) and Scrub (structure) tools
  */
 apiRouter.post('/revise', async (req, res) => {
   try {
     const { sheetContent, tool } = req.body;
 
-    if (!sheetContent || typeof sheetContent !== 'string') {
-      res.status(400).json({ error: 'Missing or invalid sheetContent' });
-      return;
-    }
-
-    if (!tool || !['wash', 'scrub'].includes(tool)) {
-      res.status(400).json({ error: 'Invalid tool. Must be "wash" or "scrub".' });
+    if (!sheetContent || !tool || !REVISE_PROMPTS[tool as string]) {
+      res.status(400).json({ error: 'Invalid input' });
       return;
     }
 
     const guardrailResult = checkText(sheetContent);
     if (!guardrailResult.allowed) {
-      res.status(400).json({
-        error: 'Content blocked by safety filters',
-        message: safeResponseFor(guardrailResult.category),
-        category: guardrailResult.category,
-      });
+      res.status(400).json({ error: 'Content blocked' });
       return;
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GOOGLE_GEMINI_KEY;
     if (!apiKey) {
-      res.json({
-        tool,
-        suggestions: [
-          { type: 'info', reason: '[DEV MODE] Revise suggestions would appear here. Set GEMINI_API_KEY to enable.' }
-        ],
-      });
+      res.json({ suggestions: [{ type: 'info', reason: 'API Key missing' }] });
       return;
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-    const systemPrompt = REVISE_PROMPTS[tool];
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: sheetContent }] }],
-      systemInstruction: systemPrompt,
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.0-flash",
+      systemInstruction: REVISE_PROMPTS[tool as string]
     });
 
+    const result = await model.generateContent(sheetContent);
     const responseText = result.response.text();
 
-    let suggestions: unknown[];
+    let suggestions: any[];
     try {
       const cleaned = responseText.replace(/^```json?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
-      const parsed: unknown = JSON.parse(cleaned);
-      if (parsed && typeof parsed === 'object' && 'suggestions' in (parsed as Record<string, unknown>)) {
-        suggestions = (parsed as { suggestions: unknown[] }).suggestions;
-      } else {
-        suggestions = [{ type: 'info', reason: 'No suggestions — your writing looks solid.' }];
-      }
+      const parsed = JSON.parse(cleaned);
+      suggestions = parsed.suggestions || [{ type: 'info', reason: 'No suggestions' }];
     } catch {
       suggestions = [{ type: 'info', reason: responseText }];
     }
 
-    res.json({
-      tool,
-      suggestions,
-      metadata: {
-        sheetLength: sheetContent.length,
-        guardrailsPassed: true,
-      },
-    });
-  } catch (error: unknown) {
-    console.error('Error in /revise endpoint:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.json({ suggestions });
+  } catch (error: any) {
+    console.error('Revise Error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Initialize the main Express app
 const app = express();
-
-// Middleware
 app.use(cors({ origin: true }));
 app.use(express.json());
-
-// Mount the router at both the root and /api
-// This allows the function to handle requests from both the hosting rewrite and direct invocation
 app.use('/', apiRouter);
 app.use('/api', apiRouter);
 
-
-/**
- * Export Express app as Cloud Function v2
- * Region can be configured via firebase.json or deployment flags
- */
-export const api = onRequest(
-  {
-    region: 'asia-southeast1',
-    // Secrets will be automatically injected by Firebase when configured
-    secrets: ['GEMINI_API_KEY'],
-  },
-  app
-);
+export const api = onRequest({ region: 'asia-southeast1' }, app);
