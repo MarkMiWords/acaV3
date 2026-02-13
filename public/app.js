@@ -91,6 +91,7 @@ const state = {
   saveTimeout: null,
   lastSavedContent: '',
   liveLinkActive: false,
+  partnerHistory: [],
   panelWidths: {
     left: 220,
     right: 320
@@ -121,6 +122,7 @@ const elements = {
   // Revise Tools
   rinseBtn: document.getElementById('rinse-btn'),
   washBtn: document.getElementById('wash-btn'),
+  scrubBtn: document.getElementById('scrub-btn'),
 
   // Help Modes
   helpModeBtns: document.querySelectorAll('.help-mode-btn'),
@@ -255,6 +257,9 @@ async function loadSheet(sheetId) {
     state.lastSavedContent = sheet.content;
 
     elements.currentEditingTitle.textContent = sheet.title || 'Untitled Sheet';
+
+    // Reset partner conversation for new sheet context
+    state.partnerHistory = [];
 
     updateWordCount();
     renderSheetList();
@@ -527,12 +532,29 @@ function addPartnerMessage(content, type = 'assistant') {
   elements.partnerMessages.scrollTop = elements.partnerMessages.scrollHeight;
 }
 
+function removeThinkingIndicator() {
+  const messages = elements.partnerMessages.querySelectorAll('.partner-message');
+  const lastMessage = messages[messages.length - 1];
+  if (lastMessage && lastMessage.textContent === 'Thinking...') {
+    lastMessage.remove();
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 async function sendPartnerMessage() {
   const message = elements.partnerInput.value.trim();
   if (!message) return;
 
   addPartnerMessage(message, 'user');
   elements.partnerInput.value = '';
+
+  // Track in conversation history
+  state.partnerHistory.push({ role: 'user', text: message });
 
   addPartnerMessage('Thinking...', 'system');
 
@@ -542,7 +564,8 @@ async function sendPartnerMessage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message,
-        sheetContent: elements.sheetEditor.textContent
+        sheetContent: elements.sheetEditor.textContent,
+        history: state.partnerHistory.slice(0, -1)
       })
     });
 
@@ -550,18 +573,16 @@ async function sendPartnerMessage() {
 
     const data = await response.json();
 
-    // Remove thinking indicator
-    const messages = elements.partnerMessages.querySelectorAll('.partner-message');
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.textContent === 'Thinking...') {
-      lastMessage.remove();
-    }
+    removeThinkingIndicator();
+
+    // Track assistant response in history
+    state.partnerHistory.push({ role: 'model', text: data.response });
 
     if (data.suggestion) {
       const suggestionCard = document.createElement('div');
       suggestionCard.className = 'suggestion-card';
       suggestionCard.innerHTML = `
-        <div class="suggestion-text">${data.suggestion}</div>
+        <div class="suggestion-text">${escapeHtml(data.suggestion)}</div>
         <button class="apply-suggestion-btn">Apply to Sheet</button>
       `;
 
@@ -570,7 +591,9 @@ async function sendPartnerMessage() {
       });
 
       const container = document.createElement('div');
-      container.appendChild(document.createTextNode(data.response || 'Here\'s a suggestion:'));
+      const responseP = document.createElement('p');
+      responseP.textContent = data.response || 'Here\'s a suggestion:';
+      container.appendChild(responseP);
       container.appendChild(suggestionCard);
 
       addPartnerMessage(container, 'assistant');
@@ -579,14 +602,11 @@ async function sendPartnerMessage() {
     }
   } catch (error) {
     console.error('Partner error:', error);
-
-    const messages = elements.partnerMessages.querySelectorAll('.partner-message');
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.textContent === 'Thinking...') {
-      lastMessage.remove();
-    }
-
+    removeThinkingIndicator();
     addPartnerMessage('Sorry, I encountered an error. Please try again.', 'system');
+
+    // Remove the failed user message from history
+    state.partnerHistory.pop();
   }
 }
 
@@ -893,20 +913,93 @@ function rinseText() {
   addPartnerMessage('Text rinsed: removed extra spaces and normalized punctuation.', 'system');
 }
 
-function washText() {
+async function washText() {
   const text = elements.sheetEditor.textContent;
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
-
-  if (sentences.length < 4) {
-    addPartnerMessage('Text looks good. Consider adding more content for better paragraph suggestions.', 'system');
+  if (countWords(text) < 10) {
+    addPartnerMessage('Write a bit more before washing — there\'s not enough to work with yet.', 'system');
     return;
   }
+  closeAllDropdowns();
+  await runReviseTool('wash');
+}
 
-  const suggestion = `Consider adding paragraph breaks:\n\n` +
-    `- After: "${sentences[2]?.trim().substring(0, 50)}..."\n` +
-    (sentences[5] ? `- After: "${sentences[5]?.trim().substring(0, 50)}..."\n` : '');
+async function scrubText() {
+  const text = elements.sheetEditor.textContent;
+  if (countWords(text) < 30) {
+    addPartnerMessage('Write more before scrubbing — structural suggestions need a longer piece.', 'system');
+    return;
+  }
+  closeAllDropdowns();
+  await runReviseTool('scrub');
+}
 
-  addPartnerMessage(suggestion, 'system');
+async function runReviseTool(tool) {
+  const toolLabel = tool === 'wash' ? 'Washing' : 'Scrubbing';
+  addPartnerMessage(`${toolLabel} your text...`, 'system');
+
+  try {
+    const response = await fetch('/api/revise', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sheetContent: elements.sheetEditor.textContent,
+        tool
+      })
+    });
+
+    if (!response.ok) throw new Error('Revise request failed');
+
+    const data = await response.json();
+
+    removeThinkingIndicator();
+
+    if (!data.suggestions || data.suggestions.length === 0) {
+      addPartnerMessage('No suggestions — your writing looks solid.', 'system');
+      return;
+    }
+
+    const container = document.createElement('div');
+
+    const header = document.createElement('p');
+    header.textContent = tool === 'wash' ? 'Clarity suggestions:' : 'Structural suggestions:';
+    header.style.fontWeight = 'bold';
+    container.appendChild(header);
+
+    data.suggestions.forEach(function(s) {
+      const card = document.createElement('div');
+      card.className = 'suggestion-card';
+
+      const typeLabel = document.createElement('span');
+      typeLabel.style.textTransform = 'uppercase';
+      typeLabel.style.fontSize = '0.7em';
+      typeLabel.style.opacity = '0.6';
+      typeLabel.textContent = s.type || 'suggestion';
+      card.appendChild(typeLabel);
+
+      const reason = document.createElement('div');
+      reason.className = 'suggestion-text';
+      reason.textContent = s.reason || s.suggestion || '';
+      card.appendChild(reason);
+
+      if (s.suggestion && s.type !== 'info') {
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'apply-suggestion-btn';
+        applyBtn.textContent = 'Apply to Sheet';
+        applyBtn.addEventListener('click', function() {
+          applySuggestionToSheet(s.suggestion);
+        });
+        card.appendChild(applyBtn);
+      }
+
+      container.appendChild(card);
+    });
+
+    addPartnerMessage(container, 'assistant');
+  } catch (error) {
+    console.error('Revise error:', error);
+    removeThinkingIndicator();
+    addPartnerMessage(`Sorry, the ${tool} tool encountered an error. Please try again.`, 'system');
+  }
 }
 
 // ===================================================================
@@ -961,6 +1054,7 @@ function initEventListeners() {
   // Revise Tools
   elements.rinseBtn.addEventListener('click', rinseText);
   elements.washBtn.addEventListener('click', washText);
+  elements.scrubBtn.addEventListener('click', scrubText);
 
   // WRAP Partner
   elements.partnerSendBtn.addEventListener('click', sendPartnerMessage);
