@@ -13,8 +13,8 @@
     "rewrites": [
       {
         "source": "/api/**",
-        "function": {
-          "functionId": "api",
+        "run": {
+          "serviceId": "api",
           "region": "asia-southeast1"
         }
       }

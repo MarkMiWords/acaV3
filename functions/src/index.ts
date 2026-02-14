@@ -112,7 +112,7 @@ apiRouter.post('/chat', async (req, res) => {
       return;
     }
 
-    const apiKey = process.env.GOOGLE_GEMINI_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_KEY;
     if (!apiKey) {
       res.json({ response: '[DEV MODE] API Key missing.' });
       return;
@@ -156,7 +156,7 @@ apiRouter.post('/partner', async (req, res) => {
       return;
     }
 
-    const apiKey = process.env.GOOGLE_GEMINI_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_KEY;
     if (!apiKey) {
       res.json({ response: '[DEV MODE] API Key missing.' });
       return;
@@ -218,7 +218,7 @@ apiRouter.post('/revise', async (req, res) => {
       return;
     }
 
-    const apiKey = process.env.GOOGLE_GEMINI_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_KEY;
     if (!apiKey) {
       res.json({ suggestions: [{ type: 'info', reason: 'API Key missing' }] });
       return;

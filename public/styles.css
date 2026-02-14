@@ -504,6 +504,11 @@ html, body {
   border-color: var(--border-color);
 }
 
+.wrap-dropdown-item.active {
+  border-color: var(--accent-primary);
+  background: rgba(74, 158, 255, 0.1);
+}
+
 .wrap-dropdown-item.disabled,
 .wrap-dropdown-item:disabled {
   opacity: 0.4;

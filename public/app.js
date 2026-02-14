@@ -1,9 +1,15 @@
 /**
  * ===================================================================
  * The Sovereign Forge - Application Logic
- * ACA V3 - Local-first writing workspace
+ * VT.6.4 - Direct Regional API Connection
  * ===================================================================
  */
+
+const FORGE_VERSION = 'VT.6.4';
+console.log(`%c Sovereign Forge Logic ${FORGE_VERSION} Loading... `, 'background: #222; color: #bada55; font-size: 1.2rem;');
+
+// Use relative path for API to work with Firebase Hosting rewrites and emulators
+const API_BASE_URL = '/api';
 
 // ===================================================================
 // IndexedDB Storage System
@@ -100,7 +106,8 @@ const state = {
     left: 220,
     right: 320
   },
-  isListening: false
+  isListening: false,
+  voiceMode: 'partner' // 'partner', 'dictation', 'live'
 };
 
 // ===================================================================
@@ -119,6 +126,7 @@ const elements = {
   // Sheet Editor
   sheetTitle: document.getElementById('sheet-title'),
   sheetEditor: document.getElementById('sheet-editor'),
+  dictationBtn: document.getElementById('dictation-btn'),
 
   // WRAP Hub
   wrapHubBtns: document.querySelectorAll('.wrap-hub-btn'),
@@ -606,10 +614,19 @@ async function sendPartnerMessage() {
   // Track in conversation history
   state.partnerHistory.push({ role: 'user', text: message });
 
+  // Reset voice accumulator if listening
+  if (state.isListening) {
+    finalTranscriptAccumulator = '';
+    elements.partnerInput.setAttribute('data-voice-base', '');
+  }
+
   addPartnerMessage('Thinking...', 'system');
 
   try {
-    const response = await fetch('/api/partner', {
+    const url = API_BASE_URL + '/partner';
+    console.log('Sending message to API:', url);
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -618,6 +635,13 @@ async function sendPartnerMessage() {
         history: state.partnerHistory.slice(0, -1)
       })
     });
+
+    // Check if response is HTML (often happens on routing errors)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+        console.error('API returned HTML instead of JSON. Check backend routing.');
+        throw new Error('API routing error (returned HTML). The backend may be misconfigured or offline.');
+    }
 
     const data = await response.json();
 
@@ -693,11 +717,17 @@ function applySuggestionToSheet(text) {
 // ===================================================================
 
 let recognition = null;
-let finalTranscript = ''; 
-let recognitionStartTime = 0;
-const MAX_LISTEN_TIME = 60000; // 1 minute safety limit
+let audioContext = null;
+let analyser = null;
+let microphoneStream = null;
+let finalTranscriptAccumulator = ''; 
+let restartTimer = null;
+let restarting = false;
 
 function initVoiceInput() {
+  console.log('initVoiceInput explicitly called');
+  if (recognition) return;
+
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
     if (elements.partnerMicBtn) elements.partnerMicBtn.style.display = 'none';
     console.warn('Speech recognition not supported in this browser.');
@@ -711,82 +741,232 @@ function initVoiceInput() {
   recognition.lang = 'en-AU';
 
   recognition.onstart = () => {
-    state.isListening = true;
-    recognitionStartTime = Date.now();
-    if (elements.partnerMicBtn) elements.partnerMicBtn.classList.add('active');
-    console.log('Voice recognition started');
+    console.log('Voice recognition session started');
+    updateMicStatusUI(true);
+    startVolumeMonitoring();
+    setTimeout(() => { restarting = false; }, 500);
   };
 
   recognition.onend = () => {
-    console.log('Voice recognition ended');
-    
-    // If we are still "listening" but browser stopped, restart
-    const elapsed = Date.now() - recognitionStartTime;
-    if (state.isListening && elapsed < MAX_LISTEN_TIME) {
-        console.log('Attempting automatic restart...');
-        try {
-            recognition.start();
-            return;
-        } catch (e) {
-            console.warn('Silent restart failed, user interaction might be required.', e);
-        }
-    }
-    
-    // If we've reached the end of the intended session
-    if (!state.isListening || elapsed >= MAX_LISTEN_TIME) {
-        state.isListening = false;
-        if (elements.partnerMicBtn) elements.partnerMicBtn.classList.remove('active');
+    console.log('Voice recognition session ended. state.isListening:', state.isListening);
+    if (state.isListening) {
+      scheduleVoiceRestart(300);
+    } else {
+      updateMicStatusUI(false);
+      stopVolumeMonitoring();
     }
   };
 
   recognition.onresult = (event) => {
     let interimTranscript = '';
-    let currentSessionFinal = '';
+    let sessionFinal = '';
     
     for (let i = event.resultIndex; i < event.results.length; ++i) {
       if (event.results[i].isFinal) {
-        currentSessionFinal += event.results[i][0].transcript + ' ';
+        sessionFinal += event.results[i][0].transcript + ' ';
       } else {
         interimTranscript += event.results[i][0].transcript;
       }
     }
 
-    if (currentSessionFinal) {
-        finalTranscript += currentSessionFinal;
+    if (sessionFinal) {
+        finalTranscriptAccumulator += sessionFinal;
     }
 
-    if (elements.partnerInput) {
-        const currentBase = elements.partnerInput.getAttribute('data-voice-base') || '';
-        elements.partnerInput.value = currentBase + (currentBase ? ' ' : '') + finalTranscript + interimTranscript;
-        elements.partnerInput.scrollTop = elements.partnerInput.scrollHeight;
-    }
+    handleVoiceResult(finalTranscriptAccumulator, interimTranscript);
   };
 
   recognition.onerror = (event) => {
     console.error('Speech recognition error:', event.error);
-    if (event.error === 'network') {
-        addPartnerMessage('Voice Error: Network issue.', 'system');
-        state.isListening = false;
+    if (!state.isListening) return;
+
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      stopVoiceInput();
     }
-    // 'aborted' is normal when restarting
   };
 
-  addSafeListener(elements.partnerMicBtn, 'click', () => {
-    if (state.isListening) {
-      state.isListening = false;
-      recognition.stop();
-    } else {
-      finalTranscript = ''; 
-      if (elements.partnerInput) {
-          elements.partnerInput.setAttribute('data-voice-base', elements.partnerInput.value);
+  // Partner Mic Button
+  if (elements.partnerMicBtn) {
+    elements.partnerMicBtn.onclick = (e) => {
+      e.preventDefault();
+      if (state.isListening && state.voiceMode === 'partner') {
+        stopVoiceInput();
+      } else {
+        state.voiceMode = 'partner';
+        startVoiceInput(elements.partnerMicBtn);
       }
-      try {
-          recognition.start();
-      } catch (e) {
-          console.error('Could not start recognition:', e);
-      }
+    };
+  }
+
+  // Hub Dictation Button
+  if (elements.dictationBtn) {
+    elements.dictationBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllDropdowns();
+        if (state.isListening && state.voiceMode === 'dictation') {
+            stopVoiceInput();
+        } else {
+            state.voiceMode = 'dictation';
+            if (elements.dictationBtn) elements.dictationBtn.classList.add('active');
+            startVoiceInput(null); 
+            addPartnerMessage('Dictation mode active. Speak to write directly to the sheet.', 'system');
+        }
+    };
+  }
+}
+
+async function startVolumeMonitoring() {
+    try {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const source = audioContext.createMediaStreamSource(microphoneStream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        
+        const checkVolume = () => {
+            if (!state.isListening) return;
+            
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += dataArray[i];
+            }
+            let average = sum / dataArray.length;
+            
+            // Visual trigger based on volume
+            const activeSpan = document.querySelector('#status-vault span');
+            if (activeSpan) {
+                if (average > 5) { // Sensitivity threshold
+                    activeSpan.style.textShadow = `0 0 ${average/1.5}px var(--danger)`;
+                    activeSpan.style.opacity = '1';
+                } else {
+                    activeSpan.style.textShadow = 'none';
+                    activeSpan.style.opacity = '0.7';
+                }
+            }
+            
+            requestAnimationFrame(checkVolume);
+        };
+        
+        checkVolume();
+    } catch (e) {
+        console.warn('Volume monitoring failed:', e.message);
     }
-  });
+}
+
+function stopVolumeMonitoring() {
+    if (microphoneStream) {
+        microphoneStream.getTracks().forEach(track => track.stop());
+        microphoneStream = null;
+    }
+    if (audioContext && audioContext.state !== 'closed') {
+        audioContext.close();
+        audioContext = null;
+    }
+}
+
+function startVoiceInput(btn) {
+    console.log('Voice Start Requested. Mode:', state.voiceMode);
+    state.isListening = true;
+    finalTranscriptAccumulator = '';
+    
+    // Clear all active mic states first
+    if (elements.partnerMicBtn) elements.partnerMicBtn.classList.remove('active');
+    if (elements.dictationBtn) elements.dictationBtn.classList.remove('active');
+    
+    if (btn) btn.classList.add('active');
+    if (state.voiceMode === 'dictation' && elements.dictationBtn) elements.dictationBtn.classList.add('active');
+    
+    if (state.voiceMode === 'partner' && elements.partnerInput) {
+        elements.partnerInput.setAttribute('data-voice-base', elements.partnerInput.value);
+    } else if (state.voiceMode === 'dictation' && elements.sheetEditor) {
+        elements.sheetEditor.setAttribute('data-voice-base', elements.sheetEditor.innerHTML);
+    } else if (state.voiceMode === 'live' && elements.sheetEditor) {
+        elements.sheetEditor.setAttribute('data-voice-base', elements.sheetEditor.innerHTML);
+    }
+
+    scheduleVoiceRestart(0);
+}
+
+function stopVoiceInput() {
+    console.log('Voice Stop Requested');
+    state.isListening = false;
+    restarting = false;
+    if (restartTimer) clearTimeout(restartTimer);
+    
+    if (elements.partnerMicBtn) elements.partnerMicBtn.classList.remove('active');
+    if (elements.dictationBtn) elements.dictationBtn.classList.remove('active');
+    if (elements.liveLinkBtn) elements.liveLinkBtn.classList.remove('active');
+    
+    try { recognition.stop(); } catch (e) {}
+    updateMicStatusUI(false);
+    stopVolumeMonitoring();
+    
+    if (state.voiceMode === 'dictation') {
+        addPartnerMessage('Dictation stopped.', 'system');
+    }
+}
+
+function handleVoiceResult(final, interim) {
+    if (state.voiceMode === 'partner') {
+        if (!elements.partnerInput) return;
+        const currentBase = elements.partnerInput.getAttribute('data-voice-base') || '';
+        const combinedText = currentBase + (currentBase && !currentBase.endsWith(' ') ? ' ' : '') + final + interim;
+        elements.partnerInput.value = combinedText;
+        elements.partnerInput.scrollTop = elements.partnerInput.scrollHeight;
+    } 
+    else if (state.voiceMode === 'dictation' || state.voiceMode === 'live') {
+        if (!elements.sheetEditor) return;
+        const currentBase = elements.sheetEditor.getAttribute('data-voice-base') || '';
+        
+        const transcript = (final + interim).trim();
+        if (transcript) {
+            elements.sheetEditor.innerHTML = currentBase + (currentBase ? '<br><br>' : '') + '<em>' + transcript + '</em>';
+            elements.sheetEditor.scrollTop = elements.sheetEditor.scrollHeight;
+            updateCurrentSheet();
+        }
+    }
+}
+
+function scheduleVoiceRestart(delay = 250) {
+  if (!recognition || !state.isListening) return;
+  if (restartTimer) clearTimeout(restartTimer);
+
+  restartTimer = setTimeout(() => {
+    if (!state.isListening) return;
+    if (restarting) return;
+
+    restarting = true;
+    console.log('Attempting to restart voice recognition...');
+
+    try {
+      recognition.start();
+    } catch (e) {
+      console.warn('Recognition start failed, scheduling retry:', e.message);
+      restarting = false;
+      scheduleVoiceRestart(600); 
+    }
+    
+    setTimeout(() => { restarting = false; }, 2000);
+  }, delay);
+}
+
+function updateMicStatusUI(isActive) {
+    const statusVault = document.getElementById('status-vault');
+    if (!statusVault) return;
+    
+    if (isActive) {
+        statusVault.innerHTML = 'Mic: <span style="color: var(--danger); font-weight: bold; transition: all 0.1s ease;">ACTIVE</span>';
+    } else {
+        statusVault.innerHTML = 'Mic: OFF';
+    }
 }
 
 // ===================================================================
@@ -831,6 +1011,7 @@ function initLiveLink() {
       state.liveLinkActive = false;
       if (elements.liveLinkBtn) elements.liveLinkBtn.classList.remove('active');
       addPartnerMessage('Live Link disconnected.', 'system');
+      stopVoiceInput();
       return;
     }
 
@@ -859,6 +1040,9 @@ function initLiveLink() {
     state.liveLinkActive = true;
     if (elements.liveLinkBtn) elements.liveLinkBtn.classList.add('active');
     addPartnerMessage('Live Link initialized. Wrapp is listening.', 'system');
+    
+    state.voiceMode = 'live';
+    startVoiceInput(null);
   });
 
   // Cancel
@@ -1121,7 +1305,7 @@ async function runReviseTool(tool) {
   addPartnerMessage(`${toolLabel} your text...`, 'system');
 
   try {
-    const response = await fetch('/api/revise', {
+    const response = await fetch(API_BASE_URL + '/revise', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1316,8 +1500,12 @@ async function init() {
     initImportText();
     initEventListeners();
     initVoiceInput();
+    
+    // UI Sync: Ensure brand version is correct
+    const brandVer = document.querySelector('.brand-version');
+    if (brandVer) brandVer.textContent = FORGE_VERSION;
 
-    console.log('The Sovereign Forge is ready');
+    console.log(`The Sovereign Forge ${FORGE_VERSION} is ready`);
 
   } catch (error) {
     console.error('Initialization error:', error);

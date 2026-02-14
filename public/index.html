@@ -15,7 +15,7 @@
     <aside class="navigator-panel" id="navigator">
       <div class="navigator-brand">
         <span class="brand-title">The Forge</span>
-        <span class="brand-version">VT.5</span>
+        <span class="brand-version">VT.6.4</span>
       </div>
 
       <div class="navigator-actions">
@@ -71,7 +71,7 @@
                 <span class="dropdown-item-desc">Duplicate an existing sheet into workspace</span>
               </button>
               <div class="dropdown-divider"></div>
-              <button class="wrap-dropdown-item disabled" disabled>
+              <button class="wrap-dropdown-item" id="dictation-btn">
                 <span class="dropdown-item-title">Dictation</span>
                 <span class="dropdown-item-desc">Speech to text — pure transcription</span>
               </button>
@@ -220,7 +220,7 @@
     <span class="status-item" id="status-words">Words: 0</span>
     <span class="status-item" id="status-context">Context: Australia</span>
     <span class="status-item" id="status-vault">Vault: Active</span>
-    <span class="status-item status-forge">The Sovereign Forge VT.5</span>
+    <span class="status-item status-forge">The Sovereign Forge VT.6.4</span>
   </div>
 
   <!-- Delete Sheet Confirmation Modal -->
@@ -329,6 +329,6 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
-  <script src="/app.js"></script>
+  <script src="/app.js?v=6.4.0"></script>
 </body>
 </html>
